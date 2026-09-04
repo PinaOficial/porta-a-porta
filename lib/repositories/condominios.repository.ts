@@ -2,8 +2,11 @@ import "server-only";
 
 import { prisma } from "@/lib/db/prisma";
 
-export function listarCondominios() {
+export function listarCondominios(includeInactive = false) {
   return prisma.condominios.findMany({
+    where: {
+      ...(includeInactive ? {} : { ativo: true }),
+    },
     orderBy: {
       criado_em: "desc",
     },
@@ -11,9 +14,28 @@ export function listarCondominios() {
 }
 
 export function buscarCondominioPorId(id: string) {
-  return prisma.condominios.findUnique({
+  return prisma.condominios.findFirst({
     where: {
       id,
+      ativo: true,
+    },
+  });
+}
+
+export function listarCondominiosPorIds(ids: string[]) {
+  if (ids.length === 0) {
+    return Promise.resolve([]);
+  }
+
+  return prisma.condominios.findMany({
+    where: {
+      id: {
+        in: ids,
+      },
+      ativo: true,
+    },
+    orderBy: {
+      criado_em: "desc",
     },
   });
 }
@@ -60,10 +82,15 @@ export function atualizarCondominio(
   });
 }
 
-export function deletarCondominio(id: string) {
-  return prisma.condominios.delete({
+export function desativarCondominio(id: string) {
+  return prisma.condominios.update({
     where: {
       id,
+    },
+    data: {
+      ativo: false,
+      desativado_em: new Date(),
+      atualizado_em: new Date(),
     },
   });
 }
