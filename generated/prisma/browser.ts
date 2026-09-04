@@ -22,3 +22,214 @@ export * from './enums';
  * This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
  */
 export type condominios = Prisma.condominiosModel
+/**
+ * Model apartamentos
+ * This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+ */
+export type apartamentos = Prisma.apartamentosModel
+/**
+ * Model carrinho_itens
+ * This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+ * This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+ */
+export type carrinho_itens = Prisma.carrinho_itensModel
+/**
+ * Model carrinhos
+ * This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+ */
+export type carrinhos = Prisma.carrinhosModel
+/**
+ * Model categorias_produto
+ * This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+ */
+export type categorias_produto = Prisma.categorias_produtoModel
+/**
+ * Model condomino_apartamentos
+ * This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+ */
+export type condomino_apartamentos = Prisma.condomino_apartamentosModel
+/**
+ * Model condominos
+ * This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+ * This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+ * This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
+ */
+export type condominos = Prisma.condominosModel
+/**
+ * Model pedido_itens
+ * This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+ * This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+ */
+export type pedido_itens = Prisma.pedido_itensModel
+/**
+ * Model pedidos
+ * This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+ */
+export type pedidos = Prisma.pedidosModel
+/**
+ * Model produtos
+ * This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+ * This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+ */
+export type produtos = Prisma.produtosModel
+/**
+ * Model audit_log_entries
+ * This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+ * This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+ */
+export type audit_log_entries = Prisma.audit_log_entriesModel
+/**
+ * Model custom_oauth_providers
+ * This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+ */
+export type custom_oauth_providers = Prisma.custom_oauth_providersModel
+/**
+ * Model flow_state
+ * This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+ * This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+ */
+export type flow_state = Prisma.flow_stateModel
+/**
+ * Model identities
+ * This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+ * This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+ */
+export type identities = Prisma.identitiesModel
+/**
+ * Model instances
+ * This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+ * This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+ */
+export type instances = Prisma.instancesModel
+/**
+ * Model mfa_amr_claims
+ * This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+ * This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+ */
+export type mfa_amr_claims = Prisma.mfa_amr_claimsModel
+/**
+ * Model mfa_challenges
+ * This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+ * This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+ */
+export type mfa_challenges = Prisma.mfa_challengesModel
+/**
+ * Model mfa_factors
+ * This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+ * This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+ */
+export type mfa_factors = Prisma.mfa_factorsModel
+/**
+ * Model oauth_authorizations
+ * This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+ */
+export type oauth_authorizations = Prisma.oauth_authorizationsModel
+/**
+ * Model oauth_client_states
+ * This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+ */
+export type oauth_client_states = Prisma.oauth_client_statesModel
+/**
+ * Model oauth_clients
+ * This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+ */
+export type oauth_clients = Prisma.oauth_clientsModel
+/**
+ * Model oauth_consents
+ * This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+ */
+export type oauth_consents = Prisma.oauth_consentsModel
+/**
+ * Model one_time_tokens
+ * This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+ * This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+ */
+export type one_time_tokens = Prisma.one_time_tokensModel
+/**
+ * Model refresh_tokens
+ * This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+ * This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+ */
+export type refresh_tokens = Prisma.refresh_tokensModel
+/**
+ * Model saml_providers
+ * This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+ * This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+ * This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+ */
+export type saml_providers = Prisma.saml_providersModel
+/**
+ * Model saml_relay_states
+ * This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+ * This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+ * This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+ */
+export type saml_relay_states = Prisma.saml_relay_statesModel
+/**
+ * Model schema_migrations
+ * This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+ * This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+ */
+export type schema_migrations = Prisma.schema_migrationsModel
+/**
+ * Model sessions
+ * This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+ * This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+ * This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+ */
+export type sessions = Prisma.sessionsModel
+/**
+ * Model sso_domains
+ * This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+ * This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+ * This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+ * This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
+ */
+export type sso_domains = Prisma.sso_domainsModel
+/**
+ * Model sso_providers
+ * This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+ * This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+ * This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+ * This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
+ */
+export type sso_providers = Prisma.sso_providersModel
+/**
+ * Model users
+ * This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+ * This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+ * This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+ * This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
+ */
+export type users = Prisma.usersModel
+/**
+ * Model webauthn_challenges
+ * This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+ */
+export type webauthn_challenges = Prisma.webauthn_challengesModel
+/**
+ * Model webauthn_credentials
+ * 
+ */
+export type webauthn_credentials = Prisma.webauthn_credentialsModel
+/**
+ * Model usuario_condominios_admin
+ * This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+ */
+export type usuario_condominios_admin = Prisma.usuario_condominios_adminModel
+/**
+ * Model usuarios
+ * This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+ */
+export type usuarios = Prisma.usuariosModel
+/**
+ * Model superadmins
+ * This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+ */
+export type superadmins = Prisma.superadminsModel
+/**
+ * Model convites_admin
+ * This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+ * This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
+ */
+export type convites_admin = Prisma.convites_adminModel

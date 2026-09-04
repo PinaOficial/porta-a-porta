@@ -1,0 +1,11 @@
+import { NextResponse } from "next/server";
+import { requireCondominiumAccess, requireCondominiumAdmin } from "@/lib/auth";
+import { toApartamentoDto } from "@/lib/dtos/marketplace";
+import { badRequest, conflict, createErrorResponse, validationError } from "@/lib/http/errors";
+import { criarApartamento, listarApartamentos } from "@/lib/repositories/apartamentos.repository";
+import { createApartamentoSchema } from "@/lib/validations/apartamentos";
+import { booleanQuerySchema, uuidSchema } from "@/lib/validations/common";
+type Context = { params: Promise<{ condominioId: string }> };
+async function id(context: Context) { const result = uuidSchema.safeParse((await context.params).condominioId); if (!result.success) throw validationError(result.error); return result.data; }
+export async function GET(request: Request, context: Context) { try { const condominioId = await id(context); const auth = await requireCondominiumAccess(condominioId); const inactive = new URL(request.url).searchParams.get("includeInactive"); const parsed = inactive ? booleanQuerySchema.safeParse(inactive) : undefined; if (parsed && !parsed.success) throw validationError(parsed.error); const includeInactive = Boolean(parsed?.data) && auth.role !== "member"; return NextResponse.json({ data: (await listarApartamentos(condominioId, includeInactive)).map(toApartamentoDto) }); } catch (error) { return createErrorResponse(error, "Erro ao buscar apartamentos."); } }
+export async function POST(request: Request, context: Context) { try { const condominioId = await id(context); await requireCondominiumAdmin(condominioId); const body = await request.json().catch(() => { throw badRequest("JSON invalido."); }); const result = createApartamentoSchema.safeParse(body); if (!result.success) throw validationError(result.error); const existing = await listarApartamentos(condominioId, true); if (existing.some((apartamento) => apartamento.numero === result.data.numero && apartamento.bloco === result.data.bloco)) throw conflict("Apartamento ja cadastrado neste condominio."); const apartamento = await criarApartamento(condominioId, result.data); return NextResponse.json({ data: toApartamentoDto(apartamento) }, { status: 201 }); } catch (error) { return createErrorResponse(error, "Erro ao criar apartamento."); } }
