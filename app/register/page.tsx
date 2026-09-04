@@ -1,0 +1,2 @@
+import { AuthForm } from "@/components/auth-form";
+export default function RegisterPage() { return <main className="min-h-screen bg-background"><header className="p-6 font-semibold text-primary">PORTA-A-PORTA</header><div className="flex min-h-[calc(100vh-12rem)] items-center justify-center px-5"><AuthForm mode="register" /></div><footer className="p-6 text-center text-xs text-muted-foreground">Porta-a-Porta — compra e venda entre moradores do mesmo condomínio.</footer></main>; }

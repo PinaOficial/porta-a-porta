@@ -1,6 +1,7 @@
 import "server-only";
 
 import { prisma } from "@/lib/db/prisma";
+import { normalizeEmail } from "@/lib/email";
 
 export type AppUserRecord = {
   id: string;
@@ -13,11 +14,11 @@ export type AppUserRecord = {
 export type CondominiumRoleResolution =
   | {
       role: "superadmin";
-      vinculoId: null;
+      vinculoId: string | null;
     }
   | {
       role: "admin";
-      vinculoId: null;
+      vinculoId: string | null;
     }
   | {
       role: "member";
@@ -61,6 +62,15 @@ export async function buscarUsuarioAplicacaoPorId(
   };
 }
 
+export async function emailPodeAtivarConta(email: string) {
+  const normalized = normalizeEmail(email);
+  const [morador, convite] = await Promise.all([
+    prisma.condominos.findFirst({ where: { email: { equals: normalized, mode: "insensitive" } }, select: { id: true } }),
+    prisma.convites_admin.findFirst({ where: { email: { equals: normalized, mode: "insensitive" }, ativo: true, consumido_em: null, cancelado_em: null }, select: { id: true } }),
+  ]);
+  return Boolean(morador || convite);
+}
+
 export async function resolverPapelPorCondominio(
   user: AppUserRecord,
   condominioId: string,
@@ -74,10 +84,27 @@ export async function resolverPapelPorCondominio(
     return null;
   }
 
+  const membership = user.condominoId
+    ? await prisma.condomino_apartamentos.findFirst({
+        where: {
+          condomino_id: user.condominoId,
+          condominio_id: condominioId,
+          ativo: true,
+          apartamentos: {
+            is: {
+              ativo: true,
+              condominios: { is: { ativo: true } },
+            },
+          },
+        },
+        select: { id: true },
+      })
+    : null;
+
   if (user.isSuperadmin) {
     return {
       role: "superadmin",
-      vinculoId: null,
+      vinculoId: membership?.id ?? null,
     };
   }
 
@@ -100,34 +127,9 @@ export async function resolverPapelPorCondominio(
   if (admin) {
     return {
       role: "admin",
-      vinculoId: null,
+      vinculoId: membership?.id ?? null,
     };
   }
-
-  if (!user.condominoId) {
-    return null;
-  }
-
-  const membership = await prisma.condomino_apartamentos.findFirst({
-    where: {
-      condomino_id: user.condominoId,
-      condominio_id: condominioId,
-      ativo: true,
-      apartamentos: {
-        is: {
-          ativo: true,
-          condominios: {
-            is: {
-              ativo: true,
-            },
-          },
-        },
-      },
-    },
-    select: {
-      id: true,
-    },
-  });
 
   if (!membership) {
     return null;
@@ -141,27 +143,39 @@ export async function resolverPapelPorCondominio(
 
 export async function listarCondominiosAcessiveisPorUsuario(user: AppUserRecord) {
   if (user.isSuperadmin) {
-    const condominios = await prisma.condominios.findMany({
-      where: {
-        ativo: true,
-      },
-      orderBy: {
-        criado_em: "desc",
-      },
-      select: {
-        id: true,
-        nome: true,
-      },
-    });
+    const [condominios, memberships] = await Promise.all([
+      prisma.condominios.findMany({
+        where: { ativo: true },
+        orderBy: { nome: "asc" },
+        select: { id: true, nome: true, cidade: true, uf: true },
+      }),
+      user.condominoId
+        ? prisma.condomino_apartamentos.findMany({
+            where: {
+              condomino_id: user.condominoId,
+              ativo: true,
+              apartamentos: { is: { ativo: true } },
+            },
+            select: { condominio_id: true },
+          })
+        : Promise.resolve([]),
+    ]);
+    const membershipIds = new Set(
+      memberships.map((membership) => membership.condominio_id),
+    );
 
     return condominios.map((condominio) => ({
       id: condominio.id,
       nome: condominio.nome,
+      cidade: condominio.cidade,
+      uf: condominio.uf,
       role: "superadmin" as const,
+      hasMembership: membershipIds.has(condominio.id),
     }));
   }
 
   const rolesByCondominiumId = new Map<string, "member" | "admin">();
+  const membershipIds = new Set<string>();
 
   if (user.condominoId) {
     const memberships = await prisma.condomino_apartamentos.findMany({
@@ -186,6 +200,7 @@ export async function listarCondominiosAcessiveisPorUsuario(user: AppUserRecord)
 
     memberships.forEach((membership) => {
       rolesByCondominiumId.set(membership.condominio_id, "member");
+      membershipIds.add(membership.condominio_id);
     });
   }
 
@@ -219,18 +234,21 @@ export async function listarCondominiosAcessiveisPorUsuario(user: AppUserRecord)
       },
       ativo: true,
     },
-    orderBy: {
-      criado_em: "desc",
-    },
+    orderBy: { nome: "asc" },
     select: {
       id: true,
       nome: true,
+      cidade: true,
+      uf: true,
     },
   });
 
   return condominios.map((condominio) => ({
     id: condominio.id,
     nome: condominio.nome,
+    cidade: condominio.cidade,
+    uf: condominio.uf,
     role: rolesByCondominiumId.get(condominio.id) ?? "member",
+    hasMembership: membershipIds.has(condominio.id),
   }));
 }

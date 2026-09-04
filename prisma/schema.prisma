@@ -26,6 +26,7 @@ model condominios {
   ativo                     Boolean                     @default(true)
   desativado_em             DateTime?                   @db.Timestamptz(6)
   apartamentos              apartamentos[]
+  convites_admin            convites_admin[]
   usuario_condominios_admin usuario_condominios_admin[]
 
   @@schema("public")
@@ -41,6 +42,7 @@ model apartamentos {
   atualizado_em          DateTime                 @default(now()) @db.Timestamptz(6)
   ativo                  Boolean                  @default(true)
   desativado_em          DateTime?                @db.Timestamptz(6)
+  tipo_unidade           tipo_unidade_moradia     @default(apartamento)
   condominios            condominios              @relation(fields: [condominio_id], references: [id], onUpdate: NoAction, map: "fk_apartamento_condominio")
   condomino_apartamentos condomino_apartamentos[]
 
@@ -126,12 +128,14 @@ model condomino_apartamentos {
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+/// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
 model condominos {
   id                     String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   nome                   String                   @db.VarChar(150)
   data_nascimento        DateTime                 @db.Date
   criado_em              DateTime                 @default(now()) @db.Timestamptz(6)
   atualizado_em          DateTime                 @default(now()) @db.Timestamptz(6)
+  email                  String?                  @db.VarChar(320)
   condomino_apartamentos condomino_apartamentos[]
   usuarios               usuarios?
 
@@ -724,6 +728,7 @@ model usuarios {
   criado_em                 DateTime                    @default(now()) @db.Timestamptz(6)
   atualizado_em             DateTime                    @default(now()) @db.Timestamptz(6)
   desativado_em             DateTime?                   @db.Timestamptz(6)
+  convites_admin            convites_admin[]
   superadmins               superadmins?
   usuario_condominios_admin usuario_condominios_admin[]
   users                     users                       @relation(fields: [id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_usuario_auth")
@@ -740,6 +745,24 @@ model superadmins {
   atualizado_em DateTime  @default(now()) @db.Timestamptz(6)
   revogado_em   DateTime? @db.Timestamptz(6)
   usuarios      usuarios  @relation(fields: [usuario_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_superadmin_usuario")
+
+  @@schema("public")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+/// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
+model convites_admin {
+  id                    String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email                 String      @db.VarChar(320)
+  condominio_id         String      @db.Uuid
+  criado_por_usuario_id String?     @db.Uuid
+  ativo                 Boolean     @default(true)
+  consumido_em          DateTime?   @db.Timestamptz(6)
+  cancelado_em          DateTime?   @db.Timestamptz(6)
+  criado_em             DateTime    @default(now()) @db.Timestamptz(6)
+  atualizado_em         DateTime    @default(now()) @db.Timestamptz(6)
+  condominios           condominios @relation(fields: [condominio_id], references: [id], onUpdate: NoAction, map: "fk_convite_admin_condominio")
+  usuarios              usuarios?   @relation(fields: [criado_por_usuario_id], references: [id], onUpdate: NoAction, map: "fk_convite_admin_criador")
 
   @@schema("public")
 }
@@ -835,4 +858,11 @@ enum one_time_token_type {
   phone_change_token
 
   @@schema("auth")
+}
+
+enum tipo_unidade_moradia {
+  apartamento
+  casa
+
+  @@schema("public")
 }

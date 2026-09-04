@@ -6,12 +6,16 @@ export type AuthUserDto = {
   id: string;
   email: string | null;
   condominoId: string | null;
+  ativo: boolean;
 };
 
 export type AccessibleCondominioDto = {
   id: string;
   nome: string;
+  cidade: string | null;
+  uf: string | null;
   role: EffectiveRole;
+  hasMembership: boolean;
 };
 
 export type AuthMeResponseDto = {
@@ -33,6 +37,7 @@ export function toAuthUserDto(user: AppUserRecord): AuthUserDto {
     id: user.id,
     email: user.email,
     condominoId: user.condominoId,
+    ativo: user.ativo,
   };
 }
 

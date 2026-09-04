@@ -33,6 +33,7 @@ export type ApartamentosMinAggregateOutputType = {
   atualizado_em: Date | null
   ativo: boolean | null
   desativado_em: Date | null
+  tipo_unidade: $Enums.tipo_unidade_moradia | null
 }
 
 export type ApartamentosMaxAggregateOutputType = {
@@ -44,6 +45,7 @@ export type ApartamentosMaxAggregateOutputType = {
   atualizado_em: Date | null
   ativo: boolean | null
   desativado_em: Date | null
+  tipo_unidade: $Enums.tipo_unidade_moradia | null
 }
 
 export type ApartamentosCountAggregateOutputType = {
@@ -55,6 +57,7 @@ export type ApartamentosCountAggregateOutputType = {
   atualizado_em: number
   ativo: number
   desativado_em: number
+  tipo_unidade: number
   _all: number
 }
 
@@ -68,6 +71,7 @@ export type ApartamentosMinAggregateInputType = {
   atualizado_em?: true
   ativo?: true
   desativado_em?: true
+  tipo_unidade?: true
 }
 
 export type ApartamentosMaxAggregateInputType = {
@@ -79,6 +83,7 @@ export type ApartamentosMaxAggregateInputType = {
   atualizado_em?: true
   ativo?: true
   desativado_em?: true
+  tipo_unidade?: true
 }
 
 export type ApartamentosCountAggregateInputType = {
@@ -90,6 +95,7 @@ export type ApartamentosCountAggregateInputType = {
   atualizado_em?: true
   ativo?: true
   desativado_em?: true
+  tipo_unidade?: true
   _all?: true
 }
 
@@ -174,6 +180,7 @@ export type ApartamentosGroupByOutputType = {
   atualizado_em: Date
   ativo: boolean
   desativado_em: Date | null
+  tipo_unidade: $Enums.tipo_unidade_moradia
   _count: ApartamentosCountAggregateOutputType | null
   _min: ApartamentosMinAggregateOutputType | null
   _max: ApartamentosMaxAggregateOutputType | null
@@ -206,6 +213,7 @@ export type apartamentosWhereInput = {
   atualizado_em?: Prisma.DateTimeFilter<"apartamentos"> | Date | string
   ativo?: Prisma.BoolFilter<"apartamentos"> | boolean
   desativado_em?: Prisma.DateTimeNullableFilter<"apartamentos"> | Date | string | null
+  tipo_unidade?: Prisma.Enumtipo_unidade_moradiaFilter<"apartamentos"> | $Enums.tipo_unidade_moradia
   condominios?: Prisma.XOR<Prisma.CondominiosScalarRelationFilter, Prisma.condominiosWhereInput>
   condomino_apartamentos?: Prisma.Condomino_apartamentosListRelationFilter
 }
@@ -219,6 +227,7 @@ export type apartamentosOrderByWithRelationInput = {
   atualizado_em?: Prisma.SortOrder
   ativo?: Prisma.SortOrder
   desativado_em?: Prisma.SortOrderInput | Prisma.SortOrder
+  tipo_unidade?: Prisma.SortOrder
   condominios?: Prisma.condominiosOrderByWithRelationInput
   condomino_apartamentos?: Prisma.condomino_apartamentosOrderByRelationAggregateInput
 }
@@ -237,6 +246,7 @@ export type apartamentosWhereUniqueInput = Prisma.AtLeast<{
   atualizado_em?: Prisma.DateTimeFilter<"apartamentos"> | Date | string
   ativo?: Prisma.BoolFilter<"apartamentos"> | boolean
   desativado_em?: Prisma.DateTimeNullableFilter<"apartamentos"> | Date | string | null
+  tipo_unidade?: Prisma.Enumtipo_unidade_moradiaFilter<"apartamentos"> | $Enums.tipo_unidade_moradia
   condominios?: Prisma.XOR<Prisma.CondominiosScalarRelationFilter, Prisma.condominiosWhereInput>
   condomino_apartamentos?: Prisma.Condomino_apartamentosListRelationFilter
 }, "id" | "condominio_id_bloco_numero" | "id_condominio_id">
@@ -250,6 +260,7 @@ export type apartamentosOrderByWithAggregationInput = {
   atualizado_em?: Prisma.SortOrder
   ativo?: Prisma.SortOrder
   desativado_em?: Prisma.SortOrderInput | Prisma.SortOrder
+  tipo_unidade?: Prisma.SortOrder
   _count?: Prisma.apartamentosCountOrderByAggregateInput
   _max?: Prisma.apartamentosMaxOrderByAggregateInput
   _min?: Prisma.apartamentosMinOrderByAggregateInput
@@ -267,6 +278,7 @@ export type apartamentosScalarWhereWithAggregatesInput = {
   atualizado_em?: Prisma.DateTimeWithAggregatesFilter<"apartamentos"> | Date | string
   ativo?: Prisma.BoolWithAggregatesFilter<"apartamentos"> | boolean
   desativado_em?: Prisma.DateTimeNullableWithAggregatesFilter<"apartamentos"> | Date | string | null
+  tipo_unidade?: Prisma.Enumtipo_unidade_moradiaWithAggregatesFilter<"apartamentos"> | $Enums.tipo_unidade_moradia
 }
 
 export type apartamentosCreateInput = {
@@ -277,6 +289,7 @@ export type apartamentosCreateInput = {
   atualizado_em?: Date | string
   ativo?: boolean
   desativado_em?: Date | string | null
+  tipo_unidade?: $Enums.tipo_unidade_moradia
   condominios: Prisma.condominiosCreateNestedOneWithoutApartamentosInput
   condomino_apartamentos?: Prisma.condomino_apartamentosCreateNestedManyWithoutApartamentosInput
 }
@@ -290,6 +303,7 @@ export type apartamentosUncheckedCreateInput = {
   atualizado_em?: Date | string
   ativo?: boolean
   desativado_em?: Date | string | null
+  tipo_unidade?: $Enums.tipo_unidade_moradia
   condomino_apartamentos?: Prisma.condomino_apartamentosUncheckedCreateNestedManyWithoutApartamentosInput
 }
 
@@ -301,6 +315,7 @@ export type apartamentosUpdateInput = {
   atualizado_em?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   ativo?: Prisma.BoolFieldUpdateOperationsInput | boolean
   desativado_em?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  tipo_unidade?: Prisma.Enumtipo_unidade_moradiaFieldUpdateOperationsInput | $Enums.tipo_unidade_moradia
   condominios?: Prisma.condominiosUpdateOneRequiredWithoutApartamentosNestedInput
   condomino_apartamentos?: Prisma.condomino_apartamentosUpdateManyWithoutApartamentosNestedInput
 }
@@ -314,6 +329,7 @@ export type apartamentosUncheckedUpdateInput = {
   atualizado_em?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   ativo?: Prisma.BoolFieldUpdateOperationsInput | boolean
   desativado_em?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  tipo_unidade?: Prisma.Enumtipo_unidade_moradiaFieldUpdateOperationsInput | $Enums.tipo_unidade_moradia
   condomino_apartamentos?: Prisma.condomino_apartamentosUncheckedUpdateManyWithoutApartamentosNestedInput
 }
 
@@ -326,6 +342,7 @@ export type apartamentosCreateManyInput = {
   atualizado_em?: Date | string
   ativo?: boolean
   desativado_em?: Date | string | null
+  tipo_unidade?: $Enums.tipo_unidade_moradia
 }
 
 export type apartamentosUpdateManyMutationInput = {
@@ -336,6 +353,7 @@ export type apartamentosUpdateManyMutationInput = {
   atualizado_em?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   ativo?: Prisma.BoolFieldUpdateOperationsInput | boolean
   desativado_em?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  tipo_unidade?: Prisma.Enumtipo_unidade_moradiaFieldUpdateOperationsInput | $Enums.tipo_unidade_moradia
 }
 
 export type apartamentosUncheckedUpdateManyInput = {
@@ -347,6 +365,7 @@ export type apartamentosUncheckedUpdateManyInput = {
   atualizado_em?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   ativo?: Prisma.BoolFieldUpdateOperationsInput | boolean
   desativado_em?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  tipo_unidade?: Prisma.Enumtipo_unidade_moradiaFieldUpdateOperationsInput | $Enums.tipo_unidade_moradia
 }
 
 export type ApartamentosListRelationFilter = {
@@ -379,6 +398,7 @@ export type apartamentosCountOrderByAggregateInput = {
   atualizado_em?: Prisma.SortOrder
   ativo?: Prisma.SortOrder
   desativado_em?: Prisma.SortOrder
+  tipo_unidade?: Prisma.SortOrder
 }
 
 export type apartamentosMaxOrderByAggregateInput = {
@@ -390,6 +410,7 @@ export type apartamentosMaxOrderByAggregateInput = {
   atualizado_em?: Prisma.SortOrder
   ativo?: Prisma.SortOrder
   desativado_em?: Prisma.SortOrder
+  tipo_unidade?: Prisma.SortOrder
 }
 
 export type apartamentosMinOrderByAggregateInput = {
@@ -401,6 +422,7 @@ export type apartamentosMinOrderByAggregateInput = {
   atualizado_em?: Prisma.SortOrder
   ativo?: Prisma.SortOrder
   desativado_em?: Prisma.SortOrder
+  tipo_unidade?: Prisma.SortOrder
 }
 
 export type ApartamentosScalarRelationFilter = {
@@ -450,6 +472,10 @@ export type apartamentosUncheckedUpdateManyWithoutCondominiosNestedInput = {
   deleteMany?: Prisma.apartamentosScalarWhereInput | Prisma.apartamentosScalarWhereInput[]
 }
 
+export type Enumtipo_unidade_moradiaFieldUpdateOperationsInput = {
+  set?: $Enums.tipo_unidade_moradia
+}
+
 export type apartamentosCreateNestedOneWithoutCondomino_apartamentosInput = {
   create?: Prisma.XOR<Prisma.apartamentosCreateWithoutCondomino_apartamentosInput, Prisma.apartamentosUncheckedCreateWithoutCondomino_apartamentosInput>
   connectOrCreate?: Prisma.apartamentosCreateOrConnectWithoutCondomino_apartamentosInput
@@ -472,6 +498,7 @@ export type apartamentosCreateWithoutCondominiosInput = {
   atualizado_em?: Date | string
   ativo?: boolean
   desativado_em?: Date | string | null
+  tipo_unidade?: $Enums.tipo_unidade_moradia
   condomino_apartamentos?: Prisma.condomino_apartamentosCreateNestedManyWithoutApartamentosInput
 }
 
@@ -483,6 +510,7 @@ export type apartamentosUncheckedCreateWithoutCondominiosInput = {
   atualizado_em?: Date | string
   ativo?: boolean
   desativado_em?: Date | string | null
+  tipo_unidade?: $Enums.tipo_unidade_moradia
   condomino_apartamentos?: Prisma.condomino_apartamentosUncheckedCreateNestedManyWithoutApartamentosInput
 }
 
@@ -524,6 +552,7 @@ export type apartamentosScalarWhereInput = {
   atualizado_em?: Prisma.DateTimeFilter<"apartamentos"> | Date | string
   ativo?: Prisma.BoolFilter<"apartamentos"> | boolean
   desativado_em?: Prisma.DateTimeNullableFilter<"apartamentos"> | Date | string | null
+  tipo_unidade?: Prisma.Enumtipo_unidade_moradiaFilter<"apartamentos"> | $Enums.tipo_unidade_moradia
 }
 
 export type apartamentosCreateWithoutCondomino_apartamentosInput = {
@@ -534,6 +563,7 @@ export type apartamentosCreateWithoutCondomino_apartamentosInput = {
   atualizado_em?: Date | string
   ativo?: boolean
   desativado_em?: Date | string | null
+  tipo_unidade?: $Enums.tipo_unidade_moradia
   condominios: Prisma.condominiosCreateNestedOneWithoutApartamentosInput
 }
 
@@ -546,6 +576,7 @@ export type apartamentosUncheckedCreateWithoutCondomino_apartamentosInput = {
   atualizado_em?: Date | string
   ativo?: boolean
   desativado_em?: Date | string | null
+  tipo_unidade?: $Enums.tipo_unidade_moradia
 }
 
 export type apartamentosCreateOrConnectWithoutCondomino_apartamentosInput = {
@@ -572,6 +603,7 @@ export type apartamentosUpdateWithoutCondomino_apartamentosInput = {
   atualizado_em?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   ativo?: Prisma.BoolFieldUpdateOperationsInput | boolean
   desativado_em?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  tipo_unidade?: Prisma.Enumtipo_unidade_moradiaFieldUpdateOperationsInput | $Enums.tipo_unidade_moradia
   condominios?: Prisma.condominiosUpdateOneRequiredWithoutApartamentosNestedInput
 }
 
@@ -584,6 +616,7 @@ export type apartamentosUncheckedUpdateWithoutCondomino_apartamentosInput = {
   atualizado_em?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   ativo?: Prisma.BoolFieldUpdateOperationsInput | boolean
   desativado_em?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  tipo_unidade?: Prisma.Enumtipo_unidade_moradiaFieldUpdateOperationsInput | $Enums.tipo_unidade_moradia
 }
 
 export type apartamentosCreateManyCondominiosInput = {
@@ -594,6 +627,7 @@ export type apartamentosCreateManyCondominiosInput = {
   atualizado_em?: Date | string
   ativo?: boolean
   desativado_em?: Date | string | null
+  tipo_unidade?: $Enums.tipo_unidade_moradia
 }
 
 export type apartamentosUpdateWithoutCondominiosInput = {
@@ -604,6 +638,7 @@ export type apartamentosUpdateWithoutCondominiosInput = {
   atualizado_em?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   ativo?: Prisma.BoolFieldUpdateOperationsInput | boolean
   desativado_em?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  tipo_unidade?: Prisma.Enumtipo_unidade_moradiaFieldUpdateOperationsInput | $Enums.tipo_unidade_moradia
   condomino_apartamentos?: Prisma.condomino_apartamentosUpdateManyWithoutApartamentosNestedInput
 }
 
@@ -615,6 +650,7 @@ export type apartamentosUncheckedUpdateWithoutCondominiosInput = {
   atualizado_em?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   ativo?: Prisma.BoolFieldUpdateOperationsInput | boolean
   desativado_em?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  tipo_unidade?: Prisma.Enumtipo_unidade_moradiaFieldUpdateOperationsInput | $Enums.tipo_unidade_moradia
   condomino_apartamentos?: Prisma.condomino_apartamentosUncheckedUpdateManyWithoutApartamentosNestedInput
 }
 
@@ -626,6 +662,7 @@ export type apartamentosUncheckedUpdateManyWithoutCondominiosInput = {
   atualizado_em?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   ativo?: Prisma.BoolFieldUpdateOperationsInput | boolean
   desativado_em?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  tipo_unidade?: Prisma.Enumtipo_unidade_moradiaFieldUpdateOperationsInput | $Enums.tipo_unidade_moradia
 }
 
 
@@ -668,6 +705,7 @@ export type apartamentosSelect<ExtArgs extends runtime.Types.Extensions.Internal
   atualizado_em?: boolean
   ativo?: boolean
   desativado_em?: boolean
+  tipo_unidade?: boolean
   condominios?: boolean | Prisma.condominiosDefaultArgs<ExtArgs>
   condomino_apartamentos?: boolean | Prisma.apartamentos$condomino_apartamentosArgs<ExtArgs>
   _count?: boolean | Prisma.ApartamentosCountOutputTypeDefaultArgs<ExtArgs>
@@ -682,6 +720,7 @@ export type apartamentosSelectCreateManyAndReturn<ExtArgs extends runtime.Types.
   atualizado_em?: boolean
   ativo?: boolean
   desativado_em?: boolean
+  tipo_unidade?: boolean
   condominios?: boolean | Prisma.condominiosDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["apartamentos"]>
 
@@ -694,6 +733,7 @@ export type apartamentosSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.
   atualizado_em?: boolean
   ativo?: boolean
   desativado_em?: boolean
+  tipo_unidade?: boolean
   condominios?: boolean | Prisma.condominiosDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["apartamentos"]>
 
@@ -706,9 +746,10 @@ export type apartamentosSelectScalar = {
   atualizado_em?: boolean
   ativo?: boolean
   desativado_em?: boolean
+  tipo_unidade?: boolean
 }
 
-export type apartamentosOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "condominio_id" | "numero" | "bloco" | "criado_em" | "atualizado_em" | "ativo" | "desativado_em", ExtArgs["result"]["apartamentos"]>
+export type apartamentosOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "condominio_id" | "numero" | "bloco" | "criado_em" | "atualizado_em" | "ativo" | "desativado_em" | "tipo_unidade", ExtArgs["result"]["apartamentos"]>
 export type apartamentosInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   condominios?: boolean | Prisma.condominiosDefaultArgs<ExtArgs>
   condomino_apartamentos?: boolean | Prisma.apartamentos$condomino_apartamentosArgs<ExtArgs>
@@ -736,6 +777,7 @@ export type $apartamentosPayload<ExtArgs extends runtime.Types.Extensions.Intern
     atualizado_em: Date
     ativo: boolean
     desativado_em: Date | null
+    tipo_unidade: $Enums.tipo_unidade_moradia
   }, ExtArgs["result"]["apartamentos"]>
   composites: {}
 }
@@ -1169,6 +1211,7 @@ export interface apartamentosFieldRefs {
   readonly atualizado_em: Prisma.FieldRef<"apartamentos", 'DateTime'>
   readonly ativo: Prisma.FieldRef<"apartamentos", 'Boolean'>
   readonly desativado_em: Prisma.FieldRef<"apartamentos", 'DateTime'>
+  readonly tipo_unidade: Prisma.FieldRef<"apartamentos", 'tipo_unidade_moradia'>
 }
     
 

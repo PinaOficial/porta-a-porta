@@ -5,18 +5,18 @@ function money(value: DecimalValue) {
 }
 
 export function toApartamentoDto(apartamento: {
-  id: string; condominio_id: string; numero: string; bloco: string; ativo: boolean;
+  id: string; condominio_id: string; numero: string; bloco: string; ativo: boolean; tipo_unidade: string;
 }) {
-  return { id: apartamento.id, condominioId: apartamento.condominio_id, numero: apartamento.numero, bloco: apartamento.bloco, ativo: apartamento.ativo };
+  return { id: apartamento.id, condominioId: apartamento.condominio_id, numero: apartamento.numero, bloco: apartamento.bloco, tipoUnidade: apartamento.tipo_unidade, ativo: apartamento.ativo };
 }
 
 export function toMembroDto(vinculo: {
   id: string; condomino_id: string; tipo_vinculo: string; ativo: boolean; criado_em: Date; desvinculado_em: Date | null;
-  condominos: { nome: string }; apartamentos: { id: string; numero: string; bloco: string };
+  condominos: { nome: string; email: string | null }; apartamentos: { id: string; numero: string; bloco: string; tipo_unidade: string };
 }) {
   return {
-    vinculoId: vinculo.id, condominoId: vinculo.condomino_id, nome: vinculo.condominos.nome,
-    apartamento: { id: vinculo.apartamentos.id, numero: vinculo.apartamentos.numero, bloco: vinculo.apartamentos.bloco },
+    vinculoId: vinculo.id, condominoId: vinculo.condomino_id, nome: vinculo.condominos.nome, email: vinculo.condominos.email,
+    apartamento: { id: vinculo.apartamentos.id, numero: vinculo.apartamentos.numero, bloco: vinculo.apartamentos.bloco, tipoUnidade: vinculo.apartamentos.tipo_unidade },
     tipoVinculo: vinculo.tipo_vinculo, ativo: vinculo.ativo, criadoEm: vinculo.criado_em, desvinculadoEm: vinculo.desvinculado_em,
   };
 }

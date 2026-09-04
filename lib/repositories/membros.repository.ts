@@ -1,7 +1,8 @@
 import "server-only";
 import { prisma } from "@/lib/db/prisma";
+import { normalizeEmail } from "@/lib/email";
 
-const memberInclude = { condominos: { select: { nome: true } }, apartamentos: { select: { id: true, numero: true, bloco: true } } } as const;
+const memberInclude = { condominos: { select: { nome: true, email: true } }, apartamentos: { select: { id: true, numero: true, bloco: true, tipo_unidade: true } } } as const;
 
 export function listarMembros(condominioId: string, includeInactive: boolean) {
   return prisma.condomino_apartamentos.findMany({ where: { condominio_id: condominioId, ...(includeInactive ? {} : { ativo: true }) }, include: memberInclude, orderBy: { criado_em: "desc" } });
@@ -15,15 +16,13 @@ export function buscarVinculoDoCondomino(condominioId: string, condominoId: stri
 export function buscarVinculoAtivoDoCondomino(condominioId: string, condominoId: string, vinculoId?: string) {
   return prisma.condomino_apartamentos.findFirst({ where: { ...(vinculoId ? { id: vinculoId } : {}), condomino_id: condominoId, condominio_id: condominioId, ativo: true, apartamentos: { ativo: true } }, select: { id: true } });
 }
-export async function criarMembro(condominioId: string, data: { condominoId?: string; novoCondomino?: { nome: string; dataNascimento: Date }; apartamentoId: string; tipoVinculo: "proprietario" | "inquilino" }) {
+export async function criarMembro(condominioId: string, data: { nome: string; email: string; dataNascimento: Date; apartamentoId: string; tipoVinculo: "proprietario" | "inquilino" }) {
   return prisma.$transaction(async (tx) => {
     const apartamento = await tx.apartamentos.findFirst({ where: { id: data.apartamentoId, condominio_id: condominioId, ativo: true }, select: { id: true } });
     if (!apartamento) return null;
-    const condominoId = data.condominoId ?? (await tx.condominos.create({ data: { nome: data.novoCondomino!.nome, data_nascimento: data.novoCondomino!.dataNascimento } })).id;
-    if (data.condominoId) {
-      const condomino = await tx.condominos.findUnique({ where: { id: condominoId }, select: { id: true } });
-      if (!condomino) return null;
-    }
+    const email = normalizeEmail(data.email);
+    const existente = await tx.condominos.findFirst({ where: { email: { equals: email, mode: "insensitive" } }, select: { id: true } });
+    const condominoId = existente?.id ?? (await tx.condominos.create({ data: { nome: data.nome, email, data_nascimento: data.dataNascimento } })).id;
     const duplicate = await tx.condomino_apartamentos.findFirst({ where: { condomino_id: condominoId, apartamento_id: data.apartamentoId }, select: { id: true } });
     if (duplicate) return "duplicate" as const;
     return tx.condomino_apartamentos.create({ data: { condomino_id: condominoId, apartamento_id: data.apartamentoId, condominio_id: condominioId, tipo_vinculo: data.tipoVinculo }, include: memberInclude });

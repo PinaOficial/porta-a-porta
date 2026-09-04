@@ -175,6 +175,23 @@ export type DateTimeNullableWithAggregatesFilter<$PrismaModel = never> = {
   _max?: Prisma.NestedDateTimeNullableFilter<$PrismaModel>
 }
 
+export type Enumtipo_unidade_moradiaFilter<$PrismaModel = never> = {
+  equals?: $Enums.tipo_unidade_moradia | Prisma.Enumtipo_unidade_moradiaFieldRefInput<$PrismaModel>
+  in?: $Enums.tipo_unidade_moradia[] | Prisma.ListEnumtipo_unidade_moradiaFieldRefInput<$PrismaModel>
+  notIn?: $Enums.tipo_unidade_moradia[] | Prisma.ListEnumtipo_unidade_moradiaFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumtipo_unidade_moradiaFilter<$PrismaModel> | $Enums.tipo_unidade_moradia
+}
+
+export type Enumtipo_unidade_moradiaWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.tipo_unidade_moradia | Prisma.Enumtipo_unidade_moradiaFieldRefInput<$PrismaModel>
+  in?: $Enums.tipo_unidade_moradia[] | Prisma.ListEnumtipo_unidade_moradiaFieldRefInput<$PrismaModel>
+  notIn?: $Enums.tipo_unidade_moradia[] | Prisma.ListEnumtipo_unidade_moradiaFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumtipo_unidade_moradiaWithAggregatesFilter<$PrismaModel> | $Enums.tipo_unidade_moradia
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumtipo_unidade_moradiaFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumtipo_unidade_moradiaFilter<$PrismaModel>
+}
+
 export type IntFilter<$PrismaModel = never> = {
   equals?: number | Prisma.IntFieldRefInput<$PrismaModel>
   in?: number[] | Prisma.ListIntFieldRefInput<$PrismaModel>
@@ -843,6 +860,23 @@ export type NestedDateTimeNullableWithAggregatesFilter<$PrismaModel = never> = {
   _count?: Prisma.NestedIntNullableFilter<$PrismaModel>
   _min?: Prisma.NestedDateTimeNullableFilter<$PrismaModel>
   _max?: Prisma.NestedDateTimeNullableFilter<$PrismaModel>
+}
+
+export type NestedEnumtipo_unidade_moradiaFilter<$PrismaModel = never> = {
+  equals?: $Enums.tipo_unidade_moradia | Prisma.Enumtipo_unidade_moradiaFieldRefInput<$PrismaModel>
+  in?: $Enums.tipo_unidade_moradia[] | Prisma.ListEnumtipo_unidade_moradiaFieldRefInput<$PrismaModel>
+  notIn?: $Enums.tipo_unidade_moradia[] | Prisma.ListEnumtipo_unidade_moradiaFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumtipo_unidade_moradiaFilter<$PrismaModel> | $Enums.tipo_unidade_moradia
+}
+
+export type NestedEnumtipo_unidade_moradiaWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.tipo_unidade_moradia | Prisma.Enumtipo_unidade_moradiaFieldRefInput<$PrismaModel>
+  in?: $Enums.tipo_unidade_moradia[] | Prisma.ListEnumtipo_unidade_moradiaFieldRefInput<$PrismaModel>
+  notIn?: $Enums.tipo_unidade_moradia[] | Prisma.ListEnumtipo_unidade_moradiaFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumtipo_unidade_moradiaWithAggregatesFilter<$PrismaModel> | $Enums.tipo_unidade_moradia
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumtipo_unidade_moradiaFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumtipo_unidade_moradiaFilter<$PrismaModel>
 }
 
 export type NestedIntWithAggregatesFilter<$PrismaModel = never> = {

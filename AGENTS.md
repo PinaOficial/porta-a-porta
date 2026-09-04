@@ -1,526 +1,268 @@
 # Porta-a-Porta — AGENTS.md
 
-## Objetivo do projeto
+## Visão geral
 
-Porta-a-Porta é um marketplace privado entre moradores de condomínios.
+Porta-a-Porta é um marketplace privado entre moradores. Um condomínio é uma fronteira obrigatória de autorização: conhecer um UUID não concede acesso. O repositório usa Next.js App Router, Supabase Auth, Prisma/PostgreSQL, Zod e componentes shadcn/ui.
 
-O sistema é multi-tenant:
+Este documento descreve o estado atual. Ao implementar algo novo, mantenha os guardrails de segurança mesmo quando a tela ou endpoint correspondente ainda não existir.
 
-- cada condomínio é uma fronteira de autorização;
-- um usuário pode ser membro de vários condomínios;
-- um usuário pode administrar vários condomínios;
-- um administrador só possui poderes administrativos nos condomínios aos quais está vinculado;
-- um superadmin possui acesso administrativo global;
-- conhecer um UUID nunca é suficiente para acessar um recurso.
+## Estado atual
+
+Implementado atualmente:
+
+- Autenticação Supabase SSR com cookies, login, cadastro, logout e sessão atual.
+- API de condomínios, apartamentos, vínculos, produtos, carrinho, checkout, pedidos, categorias e perfil.
+- Autorização dinâmica por banco para os papéis `member`, `admin` e `superadmin`.
+- Frontend inicial com login, cadastro, perfil e portal responsivo; a vitrine consulta a API real.
+- Área unificada `/administracao` para admins e superadmins, com gestão de condomínios, moradias, moradores, produtos, contas públicas, administradores e convites.
+
+Pendências conhecidas:
+
+- As páginas de carrinho, pedidos e vendedor ainda exibem estados iniciais/placeholder; não trate seus CRUDs de interface como concluídos.
+- Não há suíte automatizada de testes no repositório.
 
 ## Stack
 
-- Next.js com App Router
-- TypeScript strict
-- React
-- Prisma
-- PostgreSQL hospedado no Supabase
-- Supabase Auth
-- Zod
-- shadcn/ui
+- Next.js 16.3.4 com App Router e Turbopack.
+- React 19.2.8 e TypeScript strict.
+- Tailwind CSS 4, `tw-animate-css`, shadcn/ui 4 e `lucide-react`.
+- Prisma 7.10.0 com `@prisma/adapter-pg` e PostgreSQL hospedado no Supabase.
+- `@supabase/supabase-js` 2 e `@supabase/ssr`.
+- Zod 4.5.4.
 
-## Estrutura esperada
+Não há React Hook Form, Sonner, React Query ou SWR instalados. Não os adicione por conveniência.
 
-- `app/api`: Route Handlers HTTP
-- `lib/db`: Prisma Client
-- `lib/repositories`: acesso ao banco
-- `lib/validations`: schemas Zod
-- `lib/auth`: autenticação, contexto e autorização
-- `lib/supabase`: clientes Supabase de browser/server e utilitários SSR
+## Estrutura
 
-Antes de criar novas pastas ou abstrações, inspecione e reutilize a estrutura existente.
+```text
+app/
+  api/                         Route Handlers
+  condominios/[condominioId]/  Páginas autenticadas por condomínio
+  login/ register/             Autenticação
+  me/perfil/                   Perfil próprio
+components/
+  ui/                          Componentes shadcn locais
+  auth-form.tsx                Formulário de login/cadastro
+  portal.tsx                   Shell autenticado e vitrine
+lib/
+  auth/                        Contexto e helpers de autorização
+  db/prisma.ts                 Prisma Client
+  repositories/                Acesso aos dados de negócio
+  validations/                 Schemas Zod
+  dtos/                        Contratos de saída seguros
+  supabase/                    Clientes browser/server e proxy SSR
+prisma/schema.prisma           Schema multi-schema introspectado
+prisma7.config.ts              Configuração Prisma CLI
+proxy.ts                       Renovação SSR de sessão
+```
 
-Não acessar Prisma diretamente a partir de Client Components.
+Route Handlers coordenam autenticação, autorização, validação, repository e DTO. Não use Prisma em Client Components nem duplique queries de autorização em rotas.
+
+## Rotas HTTP
+
+Todos os segmentos dinâmicos usam nomes semânticos. Não recrie `app/api/condominios/[id]`: o item de condomínio é `[condominioId]`.
+
+| Grupo | Rotas e métodos atuais |
+| --- | --- |
+| Auth | `POST /api/auth/register`, `/login`, `/logout`; `GET /api/auth/me` |
+| Categorias | `GET /api/categorias` para usuário autenticado |
+| Condomínios | `GET, POST /api/condominios`; `GET, PATCH, DELETE /api/condominios/[condominioId]` |
+| Apartamentos | `GET, POST /api/condominios/[condominioId]/apartamentos`; `GET, PATCH, DELETE .../[apartamentoId]` |
+| Membros | `GET, POST /api/condominios/[condominioId]/membros`; `GET, PATCH, DELETE .../[vinculoId]` |
+| Produtos | `GET, POST /api/condominios/[condominioId]/produtos`; `GET, PATCH, DELETE .../[produtoId]` |
+| Carrinho | `GET .../carrinho`; `POST .../itens`; `PATCH, DELETE .../itens/[itemId]`; `POST .../checkout` |
+| Pedidos | `GET .../pedidos`; `GET, DELETE .../[pedidoId]`; `PATCH .../[pedidoId]/status` |
+| Perfil | `GET, PATCH /api/me/perfil` |
+| Administração | `GET /api/administracao/usuarios`; `DELETE /api/administracao/usuarios/[usuarioId]` somente para superadmin |
+| Administradores | `GET, POST /api/superadmin/administradores`; `DELETE .../[administradorId]`; `DELETE .../convites/[conviteId]` |
+
+O `DELETE` de pedido retorna 405. Não há PUT no projeto; prefira PATCH.
+
+## Autenticação Supabase
+
+Supabase Auth é a única autoridade de autenticação.
+
+- `lib/supabase/client.ts` cria o cliente browser com `createBrowserClient`.
+- `lib/supabase/server.ts` cria o cliente server com `createServerClient` e cookies de `next/headers`.
+- `proxy.ts` chama `updateSession()` de `lib/supabase/proxy.ts`; o utilitário usa `supabase.auth.getClaims()` para renovar cookies de sessão.
+- `requireAuth()` também usa `getClaims()`, obtém `sub` e consulta `public.usuarios`; conta inativa retorna 403.
+- Login usa `signInWithPassword`, cadastro usa `signUp`, logout usa `signOut`. `/api/auth/me` retorna DTO seguro.
+
+Não crie JWT próprio, secrets de JWT, refresh endpoint paralelo, armazenamento de token em localStorage, senha no schema `public` ou service-role key em `NEXT_PUBLIC_*`.
+
+## Autorização
+
+Helpers em `lib/auth/index.ts`:
+
+- `requireAuth()`: valida a identidade e `usuarios.ativo`.
+- `getAuthContext(condominioId?)`: resolve usuário, papel e vínculo quando houver condomínio.
+- `requireCondominiumAccess(condominioId)`: exige acesso; fora do escopo retorna 404.
+- `requireCondominiumAdmin(condominioId)`: exige admin do condomínio ou superadmin.
+- `requireSuperadmin()`: exige superadmin ativo.
+- `requireActiveMembership(condominioId)`: exige vínculo de morador ativo, inclusive para vender, carrinho e checkout.
+- `requireResourceOwnerOrAdmin()`: helper disponível para recursos cuja propriedade seja do usuário.
+
+A resolução em `lib/repositories/auth.repository.ts` consulta o PostgreSQL a cada requisição. Prioridade: `superadmin > admin > member`.
+
+- Superadmin: registro ativo em `superadmins`; é global, mas não ganha vínculo de morador.
+- Admin: registro ativo em `usuario_condominios_admin` para aquele condomínio.
+- Member: `usuarios.condomino_id` com `condomino_apartamentos` ativo no condomínio, em apartamento e condomínio ativos.
+
+## Matriz de permissão
+
+| Ação | Member | Admin local | Superadmin |
+| --- | --- | --- | --- |
+| Consultar condomínio acessível e conteúdo | Sim | Sim | Sim |
+| Consultar outro condomínio | Não | Não | Sim |
+| Criar produto | Com vínculo ativo | Somente se também member | Somente se também member |
+| Alterar/desativar produto próprio | Sim | Sim | Sim |
+| Alterar produto de terceiro | Não | No próprio condomínio | Sim |
+| Consultar ou alterar carrinho | Somente próprio, com vínculo | Nunca carrinho de terceiro | Nunca carrinho de terceiro |
+| Consultar pedidos | Compra ou venda própria | Todos do condomínio | Todos |
+| Alterar status | Somente vendedor | Sim | Sim |
+| Criar/remover vínculo ou apartamento | Não | Sim, local | Sim |
+| Criar condomínio | Não | Não | Sim |
+| Alterar condomínio | Não | Somente os administrados | Sim |
+| Desativar condomínio | Não | Não | Sim |
+| Conceder/revogar admin | Não | Não | Sim |
+| Conceder/revogar superadmin | Sem API | Sem API | Manual no Supabase |
+| Desativar conta global | Não | Não | Sim, por soft disable |
+
+Frontend serve apenas para UX. A API continua sendo a autoridade.
+
+## Multi-tenancy e IDOR/BOLA
+
+Para todo recurso de condomínio:
+
+1. Validar UUIDs e query/body com Zod.
+2. Autenticar e validar acesso ao `condominioId`.
+3. Verificar papel ou ownership necessário.
+4. Consultar e alterar usando também `condominio_id`, quando aplicável.
+5. Retornar 404 para recursos inexistentes ou fora de escopo.
+
+Nunca aceite como autoridade campos enviados pelo cliente, como `condominio_id`, `usuario_id`, `condomino_id`, comprador, vendedor, vínculo, papel ou ownership. Derive-os da sessão, URL validada e banco.
+
+Não troque uma query escopada por `findUnique({ where: { id } })` em recursos multi-tenant.
 
 ## Banco e Prisma
 
-- Prisma é a camada de acesso aos dados de negócio em `public`.
-- Supabase hospeda o PostgreSQL e gerencia o schema `auth`.
-- `auth.users` pertence ao Supabase e é external table para o Prisma.
-- Não criar, alterar, dropar ou migrar tabelas do schema `auth`.
-- `public.usuarios.id` corresponde ao `auth.users.id`.
-- O datasource usa os schemas `public` e `auth` apenas porque existem FKs entre eles.
-- Não colocar credenciais, senhas ou connection strings no código.
-- Não executar reset de banco, `DROP`, exclusão de coluna ou migration destrutiva sem confirmação explícita.
+O schema usa PostgreSQL com schemas `public` e `auth`. `auth.users` é tabela externa do Supabase, configurada em `prisma7.config.ts` com `externalTables: ["auth.users"]`. Não criar, alterar, migrar ou apagar tabelas do schema `auth`.
 
-Após `prisma db pull`, conferir manualmente se a relação de `condomino_apartamentos` com carrinhos continua 1:N (`carrinhos[]`) caso o índice parcial cause introspecção incorreta.
+`prisma7.config.ts` usa `DIRECT_URL` para comandos CLI. A aplicação cria Prisma Client com `DATABASE_URL` e `PrismaPg` em `lib/db/prisma.ts`.
+
+Modelo conceitual:
+
+```text
+condominios -> apartamentos
+condominos <-> apartamentos via condomino_apartamentos
+usuarios -> auth.users e, opcionalmente, condominos
+usuarios <-> condominios via usuario_condominios_admin
+usuarios -> superadmins
+condomino_apartamentos -> produtos e carrinhos
+carrinhos -> carrinho_itens
+pedidos -> pedido_itens
+```
+
+`condominos` representa a pessoa; `usuarios` representa a conta autenticada; `condomino_apartamentos` é o vínculo de moradia. `pedidos` têm comprador e vendedor por vínculo; checkout pode criar um pedido por vendedor.
+
+Enums de negócio: `status_carrinho` (`aberto`, `finalizado`), `status_pedido` (`solicitado`, `aceito`, `recusado`, `concluido`) e `tipo_vinculo_moradia` (`proprietario`, `inquilino`).
+
+O schema contém RLS, check constraints, índices parciais e detalhes de triggers que Prisma não representa integralmente. Após `prisma db pull`, confira manualmente que `condomino_apartamentos` ainda expõe `carrinhos[]`.
+
+## Histórico, exclusão e checkout
+
+- Condomínio, apartamento e produto usam `ativo=false` e `desativado_em`.
+- Vínculo usa `ativo=false` e `desvinculado_em`.
+- Admin e superadmin possuem `ativo` e `revogado_em`. Somente superadmin pode conceder/revogar admin pela aplicação; superadmin nunca é concedido ou revogado pela API.
+- Usuário global usa `ativo=false` e `desativado_em`; admin local apenas desativa vínculos de morador.
+- Pedido e `pedido_itens` nunca são removidos.
+- Itens de carrinho são temporários e podem sofrer hard delete.
+- Remover vínculo desativa produtos associados e limpa esses produtos somente de carrinhos abertos, preservando pedidos e histórico.
+
+`checkoutCarrinho()` vive em `lib/repositories/pedidos.repository.ts` e usa transação. Ele revalida produto ativo, estoque, vendedor ativo, condomínio e compra própria; agrupa itens por vendedor, cria um pedido por vendedor, grava snapshot de `nome_produto` e `preco_unitario`, decrementa estoque com `updateMany` condicional e finaliza o carrinho. Estoque insuficiente vira 409 e deve causar rollback.
+
+Transições permitidas: `solicitado -> aceito|recusado`; `aceito -> concluido`. Outras retornam 409.
+
+## Validações, DTOs e erros
+
+Entradas externas usam schemas em `lib/validations`:
+
+- `auth.ts`, `condominios.ts`, `apartamentos.ts`, `membros.ts`, `produtos.ts`, `carrinho.ts`, `pedidos.ts` e `perfil.ts`.
+- `common.ts` reúne `uuidSchema`, paginação, booleanos de query, preço, estoque e quantidade.
+
+Use `.strict()` para bodies sensíveis, `.trim()` para texto e schemas PATCH explícitos que exigem ao menos um campo. Não faça mass assignment.
+
+Respostas de sucesso usam normalmente `{ data: ... }`; coleções paginadas também incluem `page`, `limit`, `total` e `totalPages`. Erros de `lib/http/errors.ts` usam `{ error, details? }`. Status usados: 200, 201, 204, 400, 401, 403, 404, 405, 409 e 500.
+
+Use DTOs em `lib/dtos`; não envie objetos Prisma completos, email de terceiros ou dados internos do Supabase.
+
+## Frontend
+
+Páginas atuais:
+
+- `/`: `Portal` autenticado.
+- `/login` e `/register`: `AuthForm` conectado à API.
+- `/me/perfil`: consulta e altera somente dados pessoais permitidos.
+- `/me/perfil` funciona também quando `usuarios.condomino_id` é `null`, exibindo conta e acesso administrativo sem tratar a ausência de perfil de morador como erro.
+- `/administracao`: landing com as opções Condomínios e Usuários para admin/superadmin.
+- `/administracao/condominios`: superadmin vê todos e pode criar/desativar; admin vê e edita somente os que administra.
+- `/administracao/usuarios`: superadmin gerencia contas/admins globalmente; admin gerencia apenas moradores e vínculos do condomínio selecionado.
+- `/condominios/[condominioId]/produtos`: vitrine com busca e dados reais.
+- `/condominios/[condominioId]/carrinho`, `pedidos`, `vendedor`, `admin`, `admin/moradores` e `admin/apartamentos`: estrutura atual do portal, ainda sem CRUD de interface completo.
+
+`components/portal.tsx` contém header, navegação responsiva, seletor de condomínio e regras visuais de menu. Não use essa visibilidade como mecanismo de segurança. Comprador e vendedor não são roles globais: a mesma pessoa pode comprar e vender conforme vínculo e ownership.
+
+`components.json` configura shadcn/ui com aliases `@/components`, `@/components/ui` e `@/lib`. Reutilize os componentes existentes em `components/ui` e use `lucide-react` para ícones. Não recrie uma biblioteca visual paralela e não transforme toda a aplicação em Client Components.
+
+Tokens visuais atuais em `app/globals.css`: primário `#7B1429`, fundo `#EEE5DE`, sidebar/secundário `#D9CCC3` e texto `#3B2B30`. Use tokens CSS/Tailwind sem espalhar novos HEX arbitrários.
 
 ## Variáveis de ambiente
-
-Esperadas:
 
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
 - `DATABASE_URL`
 - `DIRECT_URL`
 
-Regras:
+Mantenha `.env` fora do Git. `.env.example` contém apenas placeholders. Nunca imprima valores reais, tokens, senhas, URLs de conexão ou secrets.
 
-- nunca criar JWT secrets próprios;
-- nunca criar `NEXT_PUBLIC_*` contendo segredo administrativo;
-- nunca expor secret/service-role key no browser;
-- não imprimir valores reais de `.env` em logs ou respostas;
-- manter `.env` fora do Git;
-- `.env.example` deve conter apenas nomes e placeholders.
+## Convenções e segurança
 
-## Autenticação
+- TypeScript strict; não use `any` ou `as any`.
+- Prefira funções pequenas e imports por `@/`.
+- Todo acesso Prisma de negócio deve ficar em `lib/repositories`.
+- Não adicione dependências sem necessidade real.
+- Não registre senha, token ou segredo em logs.
+- Não use `window.confirm`; quando implementar ações destrutivas no frontend, use o componente shadcn apropriado.
+- Não criar endpoint de refresh, concessão/revogação de superadmin ou DELETE de pedidos.
+- Nunca hard-delete `usuarios`, `condominos`, condomínios, vínculos administrativos ou histórico comercial. Revogação/desativação administrativa é sempre soft.
+- Superadmin pode pré-autorizar admin por email em `convites_admin`; admin comum não pode conceder nem revogar admin.
+- Admin pode alterar somente os campos administrativos seguros dos condomínios em que possui `usuario_condominios_admin.ativo=true`; somente superadmin cria ou desativa condomínios.
 
-Supabase Auth é a única autoridade de autenticação.
+Nunca execute sem confirmação explícita: `prisma migrate reset`, `DROP TABLE`, `DROP COLUMN`, `TRUNCATE`, reset do Supabase, deleção em massa, alteração destrutiva de migrations ou alteração do schema `auth`.
 
-Não implementar JWT próprio.
-Não criar `JWT_ACCESS_SECRET`.
-Não criar `JWT_REFRESH_SECRET`.
-Não armazenar senha no schema `public`.
+## Git e comandos
 
-Usar o JWT emitido pelo Supabase apenas para estabelecer a identidade autenticada.
+`.gitignore` ignora `.env*` (exceto `.env.example`), `.next/`, `node_modules/` e `lib/generated/prisma`. Preserve alterações não relacionadas no worktree.
 
-No servidor:
-
-- preferir `supabase.auth.getClaims()` para validar o JWT;
-- usar `supabase.auth.getUser()` quando for necessário obter o usuário atual diretamente do Auth server;
-- não usar `getSession()` como prova de autorização;
-- não confiar em claims de papel do cliente para decidir permissões de condomínio.
-
-A autorização deve ser consultada dinamicamente no PostgreSQL para que revogações tenham efeito imediato.
-
-## Estado da conta
-
-Toda requisição autenticada deve confirmar que `public.usuarios.ativo = true`.
-
-Se a conta estiver inativa:
-
-- retornar 403;
-- não confiar apenas na expiração do JWT.
-
-## Papéis
-
-Papéis efetivos:
-
-1. `superadmin`
-2. `admin`
-3. `member`
-
-### Superadmin
-
-Existe quando houver registro ativo em `public.superadmins`.
-
-- acesso administrativo global;
-- pode consultar qualquer condomínio;
-- não ganha automaticamente o direito de anunciar produto: para vender, também deve ser membro do condomínio;
-- não criar API pública para conceder/revogar superadmin;
-- concessão/revogação é feita manualmente no Supabase.
-
-### Admin
-
-Existe quando houver registro ativo em `public.usuario_condominios_admin` para o condomínio solicitado.
-
-- papel sempre específico por condomínio;
-- admin do Condomínio A não é admin do Condomínio B;
-- pode administrar recursos do condomínio ao qual está vinculado como admin;
-- para vender produto próprio, também precisa ser membro;
-- não criar API pública para conceder/revogar admin;
-- concessão/revogação é feita manualmente no Supabase.
-
-### Member
-
-Um usuário é membro quando:
-
-- `usuarios.condomino_id` aponta para um `condominos`;
-- existe pelo menos um `condomino_apartamentos` ativo desse condômino no condomínio solicitado.
-
-Um membro pode estar vinculado a vários apartamentos e vários condomínios.
-
-## Contexto de autorização
-
-Centralizar as regras em helpers reutilizáveis, evitando lógica duplicada.
-
-Preferir funções equivalentes a:
-
-- `requireAuth()`
-- `getAuthContext()`
-- `requireCondominiumAccess(condominioId)`
-- `requireCondominiumAdmin(condominioId)`
-- `requireSuperadmin()`
-- `requireResourceOwnerOrAdmin(...)`
-
-Um contexto de autorização deve ser capaz de representar:
-
-- `userId`
-- `condominoId`
-- `condominioId`, quando aplicável
-- papel efetivo naquele condomínio: `member | admin | superadmin`
-
-A prioridade de papel é:
-`superadmin > admin > member`.
-
-## Regra multi-tenant crítica
-
-Toda operação referente a um condomínio deve validar acesso ao condomínio antes de retornar dados.
-
-Nunca confiar em `condominio_id`, `usuario_id`, `comprador_id`, `vendedor_id`, papel ou ownership enviados pelo cliente.
-
-Preferir rotas aninhadas:
-
-- `/api/condominios/[condominioId]/produtos`
-- `/api/condominios/[condominioId]/apartamentos`
-- `/api/condominios/[condominioId]/membros`
-- `/api/condominios/[condominioId]/pedidos`
-
-Mesmo após validar acesso, queries de recursos multi-tenant devem filtrar também por `condominio_id` quando aplicável.
-
-Não usar somente `findUnique({ where: { id } })` para recurso multi-tenant se isso permitir descobrir/acessar um objeto de outro condomínio.
-
-Evitar IDOR/BOLA.
-
-Quando um recurso existe, mas está fora do escopo acessível do usuário, preferir 404 para não revelar sua existência.
-
-## Matriz de autorização
-
-### Condomínios
-
-Member:
-
-- vê apenas condomínios dos quais é membro.
-
-Admin:
-
-- vê os condomínios que administra;
-- também vê condomínios dos quais é membro.
-
-Superadmin:
-
-- vê todos.
-
-Criar condomínio:
-
-- somente superadmin.
-
-Alterar condomínio:
-
-- somente superadmin.
-
-Remover condomínio:
-
-- somente soft delete por superadmin.
-
-### Conteúdo geral do condomínio
-
-Membro, admin daquele condomínio e superadmin podem consultar conteúdo normal do marketplace daquele condomínio.
-
-Um membro/admin de outro condomínio não pode consultar o conteúdo.
-
-### Produtos
-
-GET:
-
-- member/admin/superadmin daquele condomínio.
-
-POST:
-
-- somente quem também for membro daquele condomínio;
-- vendedor deve ser derivado do usuário autenticado;
-- nunca confiar em `vendedor_vinculo_id` arbitrário do body.
-
-PATCH:
-
-- dono do produto;
-- admin daquele condomínio;
-- superadmin.
-
-DELETE:
-
-- dono do produto;
-- admin daquele condomínio;
-- superadmin;
-- sempre soft delete (`ativo=false`, `desativado_em=now()`).
-
-Produtos inativos:
-
-- não aparecem na vitrine;
-- não podem entrar em novos carrinhos/pedidos.
-
-### Carrinho
-
-Carrinho é privado.
-
-Somente o próprio comprador pode:
-
-- consultar;
-- adicionar item;
-- alterar quantidade;
-- remover item.
-
-Admin e superadmin não devem editar carrinhos de terceiros.
-
-Itens de carrinho são temporários e podem ser removidos fisicamente.
-
-### Pedidos
-
-GET:
-
-- comprador vê seus pedidos;
-- vendedor vê pedidos recebidos;
-- admin vê pedidos do condomínio;
-- superadmin vê todos.
-
-PATCH de status:
-
-- vendedor;
-- admin daquele condomínio;
-- superadmin.
-
-Transições válidas:
-
-- `solicitado -> aceito`
-- `solicitado -> recusado`
-- `aceito -> concluido`
-
-DELETE:
-
-- proibido para todos;
-- pedido e `pedido_itens` são histórico;
-- se houver route DELETE, retornar 405.
-
-### Dados de condômino
-
-Dados privados:
-
-- próprio usuário;
-- admin do condomínio no qual a pessoa está vinculada, dentro do escopo administrativo necessário;
-- superadmin.
-
-Não expor para membros comuns:
-
-- email de terceiros;
-- dados internos do Supabase Auth;
-- data de nascimento de terceiros;
-- carrinhos de terceiros;
-- pedidos privados de terceiros.
-
-Usar DTOs explícitos.
-
-### Vínculo de morador
-
-Criar vínculo:
-
-- admin daquele condomínio;
-- superadmin.
-
-Remover vínculo:
-
-- admin daquele condomínio;
-- superadmin;
-- saída voluntária do próprio membro somente se a regra de negócio estiver explicitamente implementada e segura.
-
-Nunca remover a pessoa global (`condominos`) para retirá-la de um condomínio.
-
-Remoção do condomínio significa soft removal em `condomino_apartamentos`.
-
-### Apartamentos
-
-GET:
-
-- member/admin/superadmin daquele condomínio.
-
-POST/PATCH:
-
-- admin daquele condomínio;
-- superadmin.
-
-DELETE:
-
-- soft delete;
-- admin daquele condomínio ou superadmin;
-- não desativar se houver vínculo ativo incompatível; retornar 409.
-
-### Admin e superadmin
-
-Não criar endpoints para:
-
-- conceder admin;
-- revogar admin;
-- conceder superadmin;
-- revogar superadmin.
-
-Essas operações são manuais no Supabase.
-
-## Soft delete e histórico
-
-Hard delete é proibido quando puder quebrar histórico comercial ou FKs.
-
-Usar soft delete/desativação para:
-
-- condomínios;
-- apartamentos;
-- vínculos de morador;
-- produtos;
-- contas da aplicação quando aplicável;
-- permissões de admin/superadmin quando aplicável.
-
-Nunca hard-delete:
-
-- pedidos;
-- `pedido_itens`;
-- produtos que participam de histórico;
-- condôminos/vínculos necessários para histórico comercial.
-
-Ao remover um morador de um condomínio:
-
-- desativar o vínculo (`ativo=false`, `desvinculado_em=now()`);
-- desativar produtos ligados àquele vínculo;
-- remover esses produtos de carrinhos abertos quando apropriado;
-- preservar pedidos e `pedido_itens`;
-- usar transação;
-- se houver estado comercial em andamento que torne a operação insegura, retornar 409.
-
-Desativar a conta do usuário não deve apagar automaticamente o registro de `auth.users` nem o histórico comercial.
-
-## Checkout e estoque
-
-Checkout deve ser transacional.
-
-No checkout:
-
-- validar novamente que produto está ativo;
-- validar vendedor/vínculo;
-- validar mesmo condomínio;
-- impedir compra própria;
-- validar estoque;
-- copiar `nome_produto` e `preco_unitario` para `pedido_itens`;
-- criar um pedido por vendedor;
-- decrementar estoque atomicamente;
-- impedir estoque negativo.
-
-Se estoque ficar insuficiente por concorrência:
-
-- abortar a transação;
-- retornar 409.
-
-## API
-
-Padrão:
-
-- `route.ts`: GET coleção / POST;
-- `[id]/route.ts`: GET / PATCH / DELETE somente quando permitido.
-
-Rotas de autenticação esperadas:
-
-- `POST /api/auth/register`
-- `POST /api/auth/login`
-- `POST /api/auth/logout`
-- `GET /api/auth/me`
-
-Não criar endpoint de refresh apenas para duplicar o refresh de sessão do Supabase SSR.
-
-Validar params, query e body com Zod.
-
-Não fazer mass assignment.
-PATCH deve aceitar somente campos explicitamente autorizados.
-
-## Status HTTP
-
-Usar consistentemente:
-
-- 200: sucesso
-- 201: criado
-- 204: sucesso sem corpo
-- 400: request inválida
-- 401: não autenticado/JWT inválido
-- 403: autenticado sem permissão
-- 404: recurso inexistente ou fora do escopo acessível
-- 409: conflito de estado/estoque/integridade/regra de negócio
-- 422: validação quando apropriado
-- 405: operação não permitida
-- 500: erro inesperado
-
-Não vazar detalhes internos do banco, stack traces ou secrets.
-
-## Repositories e separação de responsabilidades
-
-Todo acesso Prisma deve ficar em `lib/repositories` ou na camada já equivalente no projeto.
-
-Route Handlers devem coordenar:
-
-1. autenticação;
-2. autorização;
-3. validação;
-4. regra de negócio;
-5. repository;
-6. DTO/response.
-
-Evitar queries Prisma complexas diretamente em `route.ts`.
-
-Não criar abstrações excessivas, mas não duplicar lógica crítica de segurança.
-
-## Supabase SSR
-
-Usar o padrão atual do Supabase para Next.js App Router.
-
-- `@supabase/supabase-js`
-- `@supabase/ssr`
-- cliente browser e server separados;
-- sessão em cookies;
-- mecanismo de Proxy/Middleware conforme a versão de Next.js instalada;
-- validar identidade no servidor com `getClaims()`.
-
-Antes de implementar, verificar as versões realmente instaladas e seguir o padrão compatível.
-
-## Código
-
-- TypeScript strict.
-- Não usar `any`.
-- Não usar `as any`.
-- Preferir funções pequenas.
-- Não adicionar dependências sem necessidade.
-- Reutilizar padrões existentes.
-- Não deixar TODO de segurança.
-- Não silenciar erros TypeScript/ESLint.
-- Não adicionar mocks de credenciais.
-- Não logar tokens, senhas ou secrets.
-
-## Segurança
-
-Antes de implementar qualquer endpoint, revisar:
-
-- autenticação;
-- autorização;
-- isolamento entre condomínios;
-- IDOR/BOLA;
-- ownership;
-- mass assignment;
-- exposição de PII;
-- integridade histórica;
-- concorrência de estoque.
-
-Autorização no frontend é apenas UX.
-A API deve repetir todas as verificações.
-
-## Antes de concluir alterações
-
-Executar, no mínimo:
+Comandos:
 
 ```bash
+npm run dev
+npm run lint
+npm run build
 npx prisma format
 npx prisma validate
 npx prisma generate
-npm run lint
-npm run build
 ```
 
-Se houver suíte de testes existente, executá-la também.
+Antes de concluir código, execute no mínimo format, validate, generate, lint e build. Execute testes existentes quando houver.
 
-Corrigir erros causados pelas alterações antes de concluir.
+<!-- BEGIN:nextjs-agent-rules -->
 
-Ao finalizar, informar de forma objetiva:
+# This is NOT the Next.js you know
 
-- arquivos criados;
-- arquivos alterados;
-- endpoints adicionados;
-- regras de autorização implementadas;
-- comandos/testes executados;
-- pendências reais.
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

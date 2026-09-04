@@ -16,6 +16,7 @@ import type * as Prisma from "../internal/prismaNamespace"
  * Model condominos
  * This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
  * This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+ * This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
  */
 export type condominosModel = runtime.Types.Result.DefaultSelection<Prisma.$condominosPayload>
 
@@ -31,6 +32,7 @@ export type CondominosMinAggregateOutputType = {
   data_nascimento: Date | null
   criado_em: Date | null
   atualizado_em: Date | null
+  email: string | null
 }
 
 export type CondominosMaxAggregateOutputType = {
@@ -39,6 +41,7 @@ export type CondominosMaxAggregateOutputType = {
   data_nascimento: Date | null
   criado_em: Date | null
   atualizado_em: Date | null
+  email: string | null
 }
 
 export type CondominosCountAggregateOutputType = {
@@ -47,6 +50,7 @@ export type CondominosCountAggregateOutputType = {
   data_nascimento: number
   criado_em: number
   atualizado_em: number
+  email: number
   _all: number
 }
 
@@ -57,6 +61,7 @@ export type CondominosMinAggregateInputType = {
   data_nascimento?: true
   criado_em?: true
   atualizado_em?: true
+  email?: true
 }
 
 export type CondominosMaxAggregateInputType = {
@@ -65,6 +70,7 @@ export type CondominosMaxAggregateInputType = {
   data_nascimento?: true
   criado_em?: true
   atualizado_em?: true
+  email?: true
 }
 
 export type CondominosCountAggregateInputType = {
@@ -73,6 +79,7 @@ export type CondominosCountAggregateInputType = {
   data_nascimento?: true
   criado_em?: true
   atualizado_em?: true
+  email?: true
   _all?: true
 }
 
@@ -154,6 +161,7 @@ export type CondominosGroupByOutputType = {
   data_nascimento: Date
   criado_em: Date
   atualizado_em: Date
+  email: string | null
   _count: CondominosCountAggregateOutputType | null
   _min: CondominosMinAggregateOutputType | null
   _max: CondominosMaxAggregateOutputType | null
@@ -183,6 +191,7 @@ export type condominosWhereInput = {
   data_nascimento?: Prisma.DateTimeFilter<"condominos"> | Date | string
   criado_em?: Prisma.DateTimeFilter<"condominos"> | Date | string
   atualizado_em?: Prisma.DateTimeFilter<"condominos"> | Date | string
+  email?: Prisma.StringNullableFilter<"condominos"> | string | null
   condomino_apartamentos?: Prisma.Condomino_apartamentosListRelationFilter
   usuarios?: Prisma.XOR<Prisma.UsuariosNullableScalarRelationFilter, Prisma.usuariosWhereInput> | null
 }
@@ -193,6 +202,7 @@ export type condominosOrderByWithRelationInput = {
   data_nascimento?: Prisma.SortOrder
   criado_em?: Prisma.SortOrder
   atualizado_em?: Prisma.SortOrder
+  email?: Prisma.SortOrderInput | Prisma.SortOrder
   condomino_apartamentos?: Prisma.condomino_apartamentosOrderByRelationAggregateInput
   usuarios?: Prisma.usuariosOrderByWithRelationInput
 }
@@ -206,6 +216,7 @@ export type condominosWhereUniqueInput = Prisma.AtLeast<{
   data_nascimento?: Prisma.DateTimeFilter<"condominos"> | Date | string
   criado_em?: Prisma.DateTimeFilter<"condominos"> | Date | string
   atualizado_em?: Prisma.DateTimeFilter<"condominos"> | Date | string
+  email?: Prisma.StringNullableFilter<"condominos"> | string | null
   condomino_apartamentos?: Prisma.Condomino_apartamentosListRelationFilter
   usuarios?: Prisma.XOR<Prisma.UsuariosNullableScalarRelationFilter, Prisma.usuariosWhereInput> | null
 }, "id">
@@ -216,6 +227,7 @@ export type condominosOrderByWithAggregationInput = {
   data_nascimento?: Prisma.SortOrder
   criado_em?: Prisma.SortOrder
   atualizado_em?: Prisma.SortOrder
+  email?: Prisma.SortOrderInput | Prisma.SortOrder
   _count?: Prisma.condominosCountOrderByAggregateInput
   _max?: Prisma.condominosMaxOrderByAggregateInput
   _min?: Prisma.condominosMinOrderByAggregateInput
@@ -230,6 +242,7 @@ export type condominosScalarWhereWithAggregatesInput = {
   data_nascimento?: Prisma.DateTimeWithAggregatesFilter<"condominos"> | Date | string
   criado_em?: Prisma.DateTimeWithAggregatesFilter<"condominos"> | Date | string
   atualizado_em?: Prisma.DateTimeWithAggregatesFilter<"condominos"> | Date | string
+  email?: Prisma.StringNullableWithAggregatesFilter<"condominos"> | string | null
 }
 
 export type condominosCreateInput = {
@@ -238,6 +251,7 @@ export type condominosCreateInput = {
   data_nascimento: Date | string
   criado_em?: Date | string
   atualizado_em?: Date | string
+  email?: string | null
   condomino_apartamentos?: Prisma.condomino_apartamentosCreateNestedManyWithoutCondominosInput
   usuarios?: Prisma.usuariosCreateNestedOneWithoutCondominosInput
 }
@@ -248,6 +262,7 @@ export type condominosUncheckedCreateInput = {
   data_nascimento: Date | string
   criado_em?: Date | string
   atualizado_em?: Date | string
+  email?: string | null
   condomino_apartamentos?: Prisma.condomino_apartamentosUncheckedCreateNestedManyWithoutCondominosInput
   usuarios?: Prisma.usuariosUncheckedCreateNestedOneWithoutCondominosInput
 }
@@ -258,6 +273,7 @@ export type condominosUpdateInput = {
   data_nascimento?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   criado_em?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   atualizado_em?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   condomino_apartamentos?: Prisma.condomino_apartamentosUpdateManyWithoutCondominosNestedInput
   usuarios?: Prisma.usuariosUpdateOneWithoutCondominosNestedInput
 }
@@ -268,6 +284,7 @@ export type condominosUncheckedUpdateInput = {
   data_nascimento?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   criado_em?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   atualizado_em?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   condomino_apartamentos?: Prisma.condomino_apartamentosUncheckedUpdateManyWithoutCondominosNestedInput
   usuarios?: Prisma.usuariosUncheckedUpdateOneWithoutCondominosNestedInput
 }
@@ -278,6 +295,7 @@ export type condominosCreateManyInput = {
   data_nascimento: Date | string
   criado_em?: Date | string
   atualizado_em?: Date | string
+  email?: string | null
 }
 
 export type condominosUpdateManyMutationInput = {
@@ -286,6 +304,7 @@ export type condominosUpdateManyMutationInput = {
   data_nascimento?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   criado_em?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   atualizado_em?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type condominosUncheckedUpdateManyInput = {
@@ -294,6 +313,7 @@ export type condominosUncheckedUpdateManyInput = {
   data_nascimento?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   criado_em?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   atualizado_em?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type CondominosScalarRelationFilter = {
@@ -307,6 +327,7 @@ export type condominosCountOrderByAggregateInput = {
   data_nascimento?: Prisma.SortOrder
   criado_em?: Prisma.SortOrder
   atualizado_em?: Prisma.SortOrder
+  email?: Prisma.SortOrder
 }
 
 export type condominosMaxOrderByAggregateInput = {
@@ -315,6 +336,7 @@ export type condominosMaxOrderByAggregateInput = {
   data_nascimento?: Prisma.SortOrder
   criado_em?: Prisma.SortOrder
   atualizado_em?: Prisma.SortOrder
+  email?: Prisma.SortOrder
 }
 
 export type condominosMinOrderByAggregateInput = {
@@ -323,6 +345,7 @@ export type condominosMinOrderByAggregateInput = {
   data_nascimento?: Prisma.SortOrder
   criado_em?: Prisma.SortOrder
   atualizado_em?: Prisma.SortOrder
+  email?: Prisma.SortOrder
 }
 
 export type CondominosNullableScalarRelationFilter = {
@@ -366,6 +389,7 @@ export type condominosCreateWithoutCondomino_apartamentosInput = {
   data_nascimento: Date | string
   criado_em?: Date | string
   atualizado_em?: Date | string
+  email?: string | null
   usuarios?: Prisma.usuariosCreateNestedOneWithoutCondominosInput
 }
 
@@ -375,6 +399,7 @@ export type condominosUncheckedCreateWithoutCondomino_apartamentosInput = {
   data_nascimento: Date | string
   criado_em?: Date | string
   atualizado_em?: Date | string
+  email?: string | null
   usuarios?: Prisma.usuariosUncheckedCreateNestedOneWithoutCondominosInput
 }
 
@@ -400,6 +425,7 @@ export type condominosUpdateWithoutCondomino_apartamentosInput = {
   data_nascimento?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   criado_em?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   atualizado_em?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   usuarios?: Prisma.usuariosUpdateOneWithoutCondominosNestedInput
 }
 
@@ -409,6 +435,7 @@ export type condominosUncheckedUpdateWithoutCondomino_apartamentosInput = {
   data_nascimento?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   criado_em?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   atualizado_em?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   usuarios?: Prisma.usuariosUncheckedUpdateOneWithoutCondominosNestedInput
 }
 
@@ -418,6 +445,7 @@ export type condominosCreateWithoutUsuariosInput = {
   data_nascimento: Date | string
   criado_em?: Date | string
   atualizado_em?: Date | string
+  email?: string | null
   condomino_apartamentos?: Prisma.condomino_apartamentosCreateNestedManyWithoutCondominosInput
 }
 
@@ -427,6 +455,7 @@ export type condominosUncheckedCreateWithoutUsuariosInput = {
   data_nascimento: Date | string
   criado_em?: Date | string
   atualizado_em?: Date | string
+  email?: string | null
   condomino_apartamentos?: Prisma.condomino_apartamentosUncheckedCreateNestedManyWithoutCondominosInput
 }
 
@@ -452,6 +481,7 @@ export type condominosUpdateWithoutUsuariosInput = {
   data_nascimento?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   criado_em?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   atualizado_em?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   condomino_apartamentos?: Prisma.condomino_apartamentosUpdateManyWithoutCondominosNestedInput
 }
 
@@ -461,6 +491,7 @@ export type condominosUncheckedUpdateWithoutUsuariosInput = {
   data_nascimento?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   criado_em?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   atualizado_em?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   condomino_apartamentos?: Prisma.condomino_apartamentosUncheckedUpdateManyWithoutCondominosNestedInput
 }
 
@@ -501,6 +532,7 @@ export type condominosSelect<ExtArgs extends runtime.Types.Extensions.InternalAr
   data_nascimento?: boolean
   criado_em?: boolean
   atualizado_em?: boolean
+  email?: boolean
   condomino_apartamentos?: boolean | Prisma.condominos$condomino_apartamentosArgs<ExtArgs>
   usuarios?: boolean | Prisma.condominos$usuariosArgs<ExtArgs>
   _count?: boolean | Prisma.CondominosCountOutputTypeDefaultArgs<ExtArgs>
@@ -512,6 +544,7 @@ export type condominosSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Ex
   data_nascimento?: boolean
   criado_em?: boolean
   atualizado_em?: boolean
+  email?: boolean
 }, ExtArgs["result"]["condominos"]>
 
 export type condominosSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -520,6 +553,7 @@ export type condominosSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Ex
   data_nascimento?: boolean
   criado_em?: boolean
   atualizado_em?: boolean
+  email?: boolean
 }, ExtArgs["result"]["condominos"]>
 
 export type condominosSelectScalar = {
@@ -528,9 +562,10 @@ export type condominosSelectScalar = {
   data_nascimento?: boolean
   criado_em?: boolean
   atualizado_em?: boolean
+  email?: boolean
 }
 
-export type condominosOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "nome" | "data_nascimento" | "criado_em" | "atualizado_em", ExtArgs["result"]["condominos"]>
+export type condominosOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "nome" | "data_nascimento" | "criado_em" | "atualizado_em" | "email", ExtArgs["result"]["condominos"]>
 export type condominosInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   condomino_apartamentos?: boolean | Prisma.condominos$condomino_apartamentosArgs<ExtArgs>
   usuarios?: boolean | Prisma.condominos$usuariosArgs<ExtArgs>
@@ -551,6 +586,7 @@ export type $condominosPayload<ExtArgs extends runtime.Types.Extensions.Internal
     data_nascimento: Date
     criado_em: Date
     atualizado_em: Date
+    email: string | null
   }, ExtArgs["result"]["condominos"]>
   composites: {}
 }
@@ -981,6 +1017,7 @@ export interface condominosFieldRefs {
   readonly data_nascimento: Prisma.FieldRef<"condominos", 'DateTime'>
   readonly criado_em: Prisma.FieldRef<"condominos", 'DateTime'>
   readonly atualizado_em: Prisma.FieldRef<"condominos", 'DateTime'>
+  readonly email: Prisma.FieldRef<"condominos", 'String'>
 }
     
 

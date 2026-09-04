@@ -1,10 +1,15 @@
 import { NextResponse } from "next/server";
 
 import {
+  requireAuth,
+  requireCondominiumAdmin,
   requireCondominiumAccess,
   requireSuperadmin,
 } from "@/lib/auth";
-import { toCondominioComRoleDto, toCondominioDto } from "@/lib/dtos/condominios";
+import {
+  toCondominioComRoleDto,
+  toCondominioDto,
+} from "@/lib/dtos/condominios";
 import {
   badRequest,
   createErrorResponse,
@@ -22,14 +27,12 @@ import {
 } from "@/lib/validations/condominios";
 
 type RouteContext = {
-  params: Promise<{
-    id: string;
-  }>;
+  params: Promise<{ condominioId: string }>;
 };
 
 async function parseCondominioId(context: RouteContext) {
-  const { id } = await context.params;
-  const result = condominioIdSchema.safeParse(id);
+  const { condominioId } = await context.params;
+  const result = condominioIdSchema.safeParse(condominioId);
 
   if (!result.success) {
     throw validationError(result.error);
@@ -41,8 +44,14 @@ async function parseCondominioId(context: RouteContext) {
 export async function GET(_request: Request, context: RouteContext) {
   try {
     const condominioId = await parseCondominioId(context);
-    const authContext = await requireCondominiumAccess(condominioId);
-    const condominio = await buscarCondominioPorId(condominioId);
+    const user = await requireAuth();
+    const authContext = user.isSuperadmin
+      ? { role: "superadmin" as const }
+      : await requireCondominiumAccess(condominioId);
+    const condominio = await buscarCondominioPorId(
+      condominioId,
+      user.isSuperadmin,
+    );
 
     if (!condominio) {
       throw notFound("Condomínio não encontrado.");
@@ -58,9 +67,8 @@ export async function GET(_request: Request, context: RouteContext) {
 
 export async function PATCH(request: Request, context: RouteContext) {
   try {
-    await requireSuperadmin();
-
     const condominioId = await parseCondominioId(context);
+    await requireCondominiumAdmin(condominioId);
     const existingCondominio = await buscarCondominioPorId(condominioId);
 
     if (!existingCondominio) {
@@ -70,7 +78,6 @@ export async function PATCH(request: Request, context: RouteContext) {
     const body = await request.json().catch(() => {
       throw badRequest("JSON inválido.");
     });
-
     const result = updateCondominioSchema.safeParse(body);
 
     if (!result.success) {
@@ -78,10 +85,7 @@ export async function PATCH(request: Request, context: RouteContext) {
     }
 
     const condominio = await atualizarCondominio(condominioId, result.data);
-
-    return NextResponse.json({
-      data: toCondominioDto(condominio),
-    });
+    return NextResponse.json({ data: toCondominioDto(condominio) });
   } catch (error) {
     return createErrorResponse(error, "Erro ao atualizar condomínio.");
   }
@@ -99,10 +103,7 @@ export async function DELETE(_request: Request, context: RouteContext) {
     }
 
     await desativarCondominio(condominioId);
-
-    return new Response(null, {
-      status: 204,
-    });
+    return new Response(null, { status: 204 });
   } catch (error) {
     return createErrorResponse(error, "Erro ao desativar condomínio.");
   }

@@ -112,3 +112,11 @@ export const one_time_token_type = {
 } as const
 
 export type one_time_token_type = (typeof one_time_token_type)[keyof typeof one_time_token_type]
+
+
+export const tipo_unidade_moradia = {
+  apartamento: 'apartamento',
+  casa: 'casa'
+} as const
+
+export type tipo_unidade_moradia = (typeof tipo_unidade_moradia)[keyof typeof tipo_unidade_moradia]

@@ -13,11 +13,11 @@ export function listarCondominios(includeInactive = false) {
   });
 }
 
-export function buscarCondominioPorId(id: string) {
+export function buscarCondominioPorId(id: string, includeInactive = false) {
   return prisma.condominios.findFirst({
     where: {
       id,
-      ativo: true,
+      ...(includeInactive ? {} : { ativo: true }),
     },
   });
 }

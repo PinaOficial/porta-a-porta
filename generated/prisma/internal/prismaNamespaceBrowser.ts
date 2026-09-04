@@ -86,7 +86,8 @@ export const ModelName = {
   webauthn_credentials: 'webauthn_credentials',
   usuario_condominios_admin: 'usuario_condominios_admin',
   usuarios: 'usuarios',
-  superadmins: 'superadmins'
+  superadmins: 'superadmins',
+  convites_admin: 'convites_admin'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -133,7 +134,8 @@ export const ApartamentosScalarFieldEnum = {
   criado_em: 'criado_em',
   atualizado_em: 'atualizado_em',
   ativo: 'ativo',
-  desativado_em: 'desativado_em'
+  desativado_em: 'desativado_em',
+  tipo_unidade: 'tipo_unidade'
 } as const
 
 export type ApartamentosScalarFieldEnum = (typeof ApartamentosScalarFieldEnum)[keyof typeof ApartamentosScalarFieldEnum]
@@ -195,7 +197,8 @@ export const CondominosScalarFieldEnum = {
   nome: 'nome',
   data_nascimento: 'data_nascimento',
   criado_em: 'criado_em',
-  atualizado_em: 'atualizado_em'
+  atualizado_em: 'atualizado_em',
+  email: 'email'
 } as const
 
 export type CondominosScalarFieldEnum = (typeof CondominosScalarFieldEnum)[keyof typeof CondominosScalarFieldEnum]
@@ -661,6 +664,21 @@ export const SuperadminsScalarFieldEnum = {
 } as const
 
 export type SuperadminsScalarFieldEnum = (typeof SuperadminsScalarFieldEnum)[keyof typeof SuperadminsScalarFieldEnum]
+
+
+export const Convites_adminScalarFieldEnum = {
+  id: 'id',
+  email: 'email',
+  condominio_id: 'condominio_id',
+  criado_por_usuario_id: 'criado_por_usuario_id',
+  ativo: 'ativo',
+  consumido_em: 'consumido_em',
+  cancelado_em: 'cancelado_em',
+  criado_em: 'criado_em',
+  atualizado_em: 'atualizado_em'
+} as const
+
+export type Convites_adminScalarFieldEnum = (typeof Convites_adminScalarFieldEnum)[keyof typeof Convites_adminScalarFieldEnum]
 
 
 export const SortOrder = {

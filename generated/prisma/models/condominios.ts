@@ -255,6 +255,7 @@ export type condominiosWhereInput = {
   ativo?: Prisma.BoolFilter<"condominios"> | boolean
   desativado_em?: Prisma.DateTimeNullableFilter<"condominios"> | Date | string | null
   apartamentos?: Prisma.ApartamentosListRelationFilter
+  convites_admin?: Prisma.Convites_adminListRelationFilter
   usuario_condominios_admin?: Prisma.Usuario_condominios_adminListRelationFilter
 }
 
@@ -274,6 +275,7 @@ export type condominiosOrderByWithRelationInput = {
   ativo?: Prisma.SortOrder
   desativado_em?: Prisma.SortOrderInput | Prisma.SortOrder
   apartamentos?: Prisma.apartamentosOrderByRelationAggregateInput
+  convites_admin?: Prisma.convites_adminOrderByRelationAggregateInput
   usuario_condominios_admin?: Prisma.usuario_condominios_adminOrderByRelationAggregateInput
 }
 
@@ -296,6 +298,7 @@ export type condominiosWhereUniqueInput = Prisma.AtLeast<{
   ativo?: Prisma.BoolFilter<"condominios"> | boolean
   desativado_em?: Prisma.DateTimeNullableFilter<"condominios"> | Date | string | null
   apartamentos?: Prisma.ApartamentosListRelationFilter
+  convites_admin?: Prisma.Convites_adminListRelationFilter
   usuario_condominios_admin?: Prisma.Usuario_condominios_adminListRelationFilter
 }, "id">
 
@@ -355,6 +358,7 @@ export type condominiosCreateInput = {
   ativo?: boolean
   desativado_em?: Date | string | null
   apartamentos?: Prisma.apartamentosCreateNestedManyWithoutCondominiosInput
+  convites_admin?: Prisma.convites_adminCreateNestedManyWithoutCondominiosInput
   usuario_condominios_admin?: Prisma.usuario_condominios_adminCreateNestedManyWithoutCondominiosInput
 }
 
@@ -374,6 +378,7 @@ export type condominiosUncheckedCreateInput = {
   ativo?: boolean
   desativado_em?: Date | string | null
   apartamentos?: Prisma.apartamentosUncheckedCreateNestedManyWithoutCondominiosInput
+  convites_admin?: Prisma.convites_adminUncheckedCreateNestedManyWithoutCondominiosInput
   usuario_condominios_admin?: Prisma.usuario_condominios_adminUncheckedCreateNestedManyWithoutCondominiosInput
 }
 
@@ -393,6 +398,7 @@ export type condominiosUpdateInput = {
   ativo?: Prisma.BoolFieldUpdateOperationsInput | boolean
   desativado_em?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   apartamentos?: Prisma.apartamentosUpdateManyWithoutCondominiosNestedInput
+  convites_admin?: Prisma.convites_adminUpdateManyWithoutCondominiosNestedInput
   usuario_condominios_admin?: Prisma.usuario_condominios_adminUpdateManyWithoutCondominiosNestedInput
 }
 
@@ -412,6 +418,7 @@ export type condominiosUncheckedUpdateInput = {
   ativo?: Prisma.BoolFieldUpdateOperationsInput | boolean
   desativado_em?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   apartamentos?: Prisma.apartamentosUncheckedUpdateManyWithoutCondominiosNestedInput
+  convites_admin?: Prisma.convites_adminUncheckedUpdateManyWithoutCondominiosNestedInput
   usuario_condominios_admin?: Prisma.usuario_condominios_adminUncheckedUpdateManyWithoutCondominiosNestedInput
 }
 
@@ -570,6 +577,20 @@ export type condominiosUpdateOneRequiredWithoutUsuario_condominios_adminNestedIn
   update?: Prisma.XOR<Prisma.XOR<Prisma.condominiosUpdateToOneWithWhereWithoutUsuario_condominios_adminInput, Prisma.condominiosUpdateWithoutUsuario_condominios_adminInput>, Prisma.condominiosUncheckedUpdateWithoutUsuario_condominios_adminInput>
 }
 
+export type condominiosCreateNestedOneWithoutConvites_adminInput = {
+  create?: Prisma.XOR<Prisma.condominiosCreateWithoutConvites_adminInput, Prisma.condominiosUncheckedCreateWithoutConvites_adminInput>
+  connectOrCreate?: Prisma.condominiosCreateOrConnectWithoutConvites_adminInput
+  connect?: Prisma.condominiosWhereUniqueInput
+}
+
+export type condominiosUpdateOneRequiredWithoutConvites_adminNestedInput = {
+  create?: Prisma.XOR<Prisma.condominiosCreateWithoutConvites_adminInput, Prisma.condominiosUncheckedCreateWithoutConvites_adminInput>
+  connectOrCreate?: Prisma.condominiosCreateOrConnectWithoutConvites_adminInput
+  upsert?: Prisma.condominiosUpsertWithoutConvites_adminInput
+  connect?: Prisma.condominiosWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.condominiosUpdateToOneWithWhereWithoutConvites_adminInput, Prisma.condominiosUpdateWithoutConvites_adminInput>, Prisma.condominiosUncheckedUpdateWithoutConvites_adminInput>
+}
+
 export type condominiosCreateWithoutApartamentosInput = {
   id?: string
   nome: string
@@ -585,6 +606,7 @@ export type condominiosCreateWithoutApartamentosInput = {
   atualizado_em?: Date | string
   ativo?: boolean
   desativado_em?: Date | string | null
+  convites_admin?: Prisma.convites_adminCreateNestedManyWithoutCondominiosInput
   usuario_condominios_admin?: Prisma.usuario_condominios_adminCreateNestedManyWithoutCondominiosInput
 }
 
@@ -603,6 +625,7 @@ export type condominiosUncheckedCreateWithoutApartamentosInput = {
   atualizado_em?: Date | string
   ativo?: boolean
   desativado_em?: Date | string | null
+  convites_admin?: Prisma.convites_adminUncheckedCreateNestedManyWithoutCondominiosInput
   usuario_condominios_admin?: Prisma.usuario_condominios_adminUncheckedCreateNestedManyWithoutCondominiosInput
 }
 
@@ -637,6 +660,7 @@ export type condominiosUpdateWithoutApartamentosInput = {
   atualizado_em?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   ativo?: Prisma.BoolFieldUpdateOperationsInput | boolean
   desativado_em?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  convites_admin?: Prisma.convites_adminUpdateManyWithoutCondominiosNestedInput
   usuario_condominios_admin?: Prisma.usuario_condominios_adminUpdateManyWithoutCondominiosNestedInput
 }
 
@@ -655,6 +679,7 @@ export type condominiosUncheckedUpdateWithoutApartamentosInput = {
   atualizado_em?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   ativo?: Prisma.BoolFieldUpdateOperationsInput | boolean
   desativado_em?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  convites_admin?: Prisma.convites_adminUncheckedUpdateManyWithoutCondominiosNestedInput
   usuario_condominios_admin?: Prisma.usuario_condominios_adminUncheckedUpdateManyWithoutCondominiosNestedInput
 }
 
@@ -674,6 +699,7 @@ export type condominiosCreateWithoutUsuario_condominios_adminInput = {
   ativo?: boolean
   desativado_em?: Date | string | null
   apartamentos?: Prisma.apartamentosCreateNestedManyWithoutCondominiosInput
+  convites_admin?: Prisma.convites_adminCreateNestedManyWithoutCondominiosInput
 }
 
 export type condominiosUncheckedCreateWithoutUsuario_condominios_adminInput = {
@@ -692,6 +718,7 @@ export type condominiosUncheckedCreateWithoutUsuario_condominios_adminInput = {
   ativo?: boolean
   desativado_em?: Date | string | null
   apartamentos?: Prisma.apartamentosUncheckedCreateNestedManyWithoutCondominiosInput
+  convites_admin?: Prisma.convites_adminUncheckedCreateNestedManyWithoutCondominiosInput
 }
 
 export type condominiosCreateOrConnectWithoutUsuario_condominios_adminInput = {
@@ -726,6 +753,7 @@ export type condominiosUpdateWithoutUsuario_condominios_adminInput = {
   ativo?: Prisma.BoolFieldUpdateOperationsInput | boolean
   desativado_em?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   apartamentos?: Prisma.apartamentosUpdateManyWithoutCondominiosNestedInput
+  convites_admin?: Prisma.convites_adminUpdateManyWithoutCondominiosNestedInput
 }
 
 export type condominiosUncheckedUpdateWithoutUsuario_condominios_adminInput = {
@@ -744,6 +772,99 @@ export type condominiosUncheckedUpdateWithoutUsuario_condominios_adminInput = {
   ativo?: Prisma.BoolFieldUpdateOperationsInput | boolean
   desativado_em?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   apartamentos?: Prisma.apartamentosUncheckedUpdateManyWithoutCondominiosNestedInput
+  convites_admin?: Prisma.convites_adminUncheckedUpdateManyWithoutCondominiosNestedInput
+}
+
+export type condominiosCreateWithoutConvites_adminInput = {
+  id?: string
+  nome: string
+  descricao?: string | null
+  cep?: string | null
+  logradouro?: string | null
+  numero?: string | null
+  complemento?: string | null
+  bairro?: string | null
+  cidade?: string | null
+  uf?: string | null
+  criado_em?: Date | string
+  atualizado_em?: Date | string
+  ativo?: boolean
+  desativado_em?: Date | string | null
+  apartamentos?: Prisma.apartamentosCreateNestedManyWithoutCondominiosInput
+  usuario_condominios_admin?: Prisma.usuario_condominios_adminCreateNestedManyWithoutCondominiosInput
+}
+
+export type condominiosUncheckedCreateWithoutConvites_adminInput = {
+  id?: string
+  nome: string
+  descricao?: string | null
+  cep?: string | null
+  logradouro?: string | null
+  numero?: string | null
+  complemento?: string | null
+  bairro?: string | null
+  cidade?: string | null
+  uf?: string | null
+  criado_em?: Date | string
+  atualizado_em?: Date | string
+  ativo?: boolean
+  desativado_em?: Date | string | null
+  apartamentos?: Prisma.apartamentosUncheckedCreateNestedManyWithoutCondominiosInput
+  usuario_condominios_admin?: Prisma.usuario_condominios_adminUncheckedCreateNestedManyWithoutCondominiosInput
+}
+
+export type condominiosCreateOrConnectWithoutConvites_adminInput = {
+  where: Prisma.condominiosWhereUniqueInput
+  create: Prisma.XOR<Prisma.condominiosCreateWithoutConvites_adminInput, Prisma.condominiosUncheckedCreateWithoutConvites_adminInput>
+}
+
+export type condominiosUpsertWithoutConvites_adminInput = {
+  update: Prisma.XOR<Prisma.condominiosUpdateWithoutConvites_adminInput, Prisma.condominiosUncheckedUpdateWithoutConvites_adminInput>
+  create: Prisma.XOR<Prisma.condominiosCreateWithoutConvites_adminInput, Prisma.condominiosUncheckedCreateWithoutConvites_adminInput>
+  where?: Prisma.condominiosWhereInput
+}
+
+export type condominiosUpdateToOneWithWhereWithoutConvites_adminInput = {
+  where?: Prisma.condominiosWhereInput
+  data: Prisma.XOR<Prisma.condominiosUpdateWithoutConvites_adminInput, Prisma.condominiosUncheckedUpdateWithoutConvites_adminInput>
+}
+
+export type condominiosUpdateWithoutConvites_adminInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  nome?: Prisma.StringFieldUpdateOperationsInput | string
+  descricao?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  cep?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  logradouro?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  numero?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  complemento?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bairro?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  cidade?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  uf?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  criado_em?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  atualizado_em?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  ativo?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  desativado_em?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  apartamentos?: Prisma.apartamentosUpdateManyWithoutCondominiosNestedInput
+  usuario_condominios_admin?: Prisma.usuario_condominios_adminUpdateManyWithoutCondominiosNestedInput
+}
+
+export type condominiosUncheckedUpdateWithoutConvites_adminInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  nome?: Prisma.StringFieldUpdateOperationsInput | string
+  descricao?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  cep?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  logradouro?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  numero?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  complemento?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  bairro?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  cidade?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  uf?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  criado_em?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  atualizado_em?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  ativo?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  desativado_em?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  apartamentos?: Prisma.apartamentosUncheckedUpdateManyWithoutCondominiosNestedInput
+  usuario_condominios_admin?: Prisma.usuario_condominios_adminUncheckedUpdateManyWithoutCondominiosNestedInput
 }
 
 
@@ -753,11 +874,13 @@ export type condominiosUncheckedUpdateWithoutUsuario_condominios_adminInput = {
 
 export type CondominiosCountOutputType = {
   apartamentos: number
+  convites_admin: number
   usuario_condominios_admin: number
 }
 
 export type CondominiosCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   apartamentos?: boolean | CondominiosCountOutputTypeCountApartamentosArgs
+  convites_admin?: boolean | CondominiosCountOutputTypeCountConvites_adminArgs
   usuario_condominios_admin?: boolean | CondominiosCountOutputTypeCountUsuario_condominios_adminArgs
 }
 
@@ -776,6 +899,13 @@ export type CondominiosCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.
  */
 export type CondominiosCountOutputTypeCountApartamentosArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.apartamentosWhereInput
+}
+
+/**
+ * CondominiosCountOutputType without action
+ */
+export type CondominiosCountOutputTypeCountConvites_adminArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.convites_adminWhereInput
 }
 
 /**
@@ -802,6 +932,7 @@ export type condominiosSelect<ExtArgs extends runtime.Types.Extensions.InternalA
   ativo?: boolean
   desativado_em?: boolean
   apartamentos?: boolean | Prisma.condominios$apartamentosArgs<ExtArgs>
+  convites_admin?: boolean | Prisma.condominios$convites_adminArgs<ExtArgs>
   usuario_condominios_admin?: boolean | Prisma.condominios$usuario_condominios_adminArgs<ExtArgs>
   _count?: boolean | Prisma.CondominiosCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["condominios"]>
@@ -860,6 +991,7 @@ export type condominiosSelectScalar = {
 export type condominiosOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "nome" | "descricao" | "cep" | "logradouro" | "numero" | "complemento" | "bairro" | "cidade" | "uf" | "criado_em" | "atualizado_em" | "ativo" | "desativado_em", ExtArgs["result"]["condominios"]>
 export type condominiosInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   apartamentos?: boolean | Prisma.condominios$apartamentosArgs<ExtArgs>
+  convites_admin?: boolean | Prisma.condominios$convites_adminArgs<ExtArgs>
   usuario_condominios_admin?: boolean | Prisma.condominios$usuario_condominios_adminArgs<ExtArgs>
   _count?: boolean | Prisma.CondominiosCountOutputTypeDefaultArgs<ExtArgs>
 }
@@ -870,6 +1002,7 @@ export type $condominiosPayload<ExtArgs extends runtime.Types.Extensions.Interna
   name: "condominios"
   objects: {
     apartamentos: Prisma.$apartamentosPayload<ExtArgs>[]
+    convites_admin: Prisma.$convites_adminPayload<ExtArgs>[]
     usuario_condominios_admin: Prisma.$usuario_condominios_adminPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
@@ -1282,6 +1415,7 @@ readonly fields: condominiosFieldRefs;
 export interface Prisma__condominiosClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
   apartamentos<T extends Prisma.condominios$apartamentosArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.condominios$apartamentosArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$apartamentosPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  convites_admin<T extends Prisma.condominios$convites_adminArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.condominios$convites_adminArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$convites_adminPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   usuario_condominios_admin<T extends Prisma.condominios$usuario_condominios_adminArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.condominios$usuario_condominios_adminArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$usuario_condominios_adminPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
@@ -1740,6 +1874,30 @@ export type condominios$apartamentosArgs<ExtArgs extends runtime.Types.Extension
   take?: number
   skip?: number
   distinct?: Prisma.ApartamentosScalarFieldEnum | Prisma.ApartamentosScalarFieldEnum[]
+}
+
+/**
+ * condominios.convites_admin
+ */
+export type condominios$convites_adminArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the convites_admin
+   */
+  select?: Prisma.convites_adminSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the convites_admin
+   */
+  omit?: Prisma.convites_adminOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.convites_adminInclude<ExtArgs> | null
+  where?: Prisma.convites_adminWhereInput
+  orderBy?: Prisma.convites_adminOrderByWithRelationInput | Prisma.convites_adminOrderByWithRelationInput[]
+  cursor?: Prisma.convites_adminWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.Convites_adminScalarFieldEnum | Prisma.Convites_adminScalarFieldEnum[]
 }
 
 /**

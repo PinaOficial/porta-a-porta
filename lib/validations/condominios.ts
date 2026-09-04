@@ -13,6 +13,7 @@ const condominioBaseSchema = z.object({
     .string()
     .trim()
     .regex(/^\d{5}-?\d{3}$/, "CEP inválido.")
+    .transform((value) => value.replace("-", ""))
     .nullable()
     .optional(),
 

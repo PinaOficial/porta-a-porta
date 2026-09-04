@@ -8,7 +8,8 @@ import {
   forbidden,
   validationError,
 } from "@/lib/http/errors";
-import { buscarUsuarioAplicacaoPorId } from "@/lib/repositories/auth.repository";
+import { buscarUsuarioAplicacaoPorId, emailPodeAtivarConta } from "@/lib/repositories/auth.repository";
+import { normalizeEmail } from "@/lib/email";
 import { createClient as createSupabaseServerClient } from "@/lib/supabase/server";
 import { registerSchema } from "@/lib/validations/auth";
 
@@ -24,8 +25,13 @@ export async function POST(request: Request) {
       throw validationError(result.error);
     }
 
+    const email = normalizeEmail(result.data.email);
+    if (!await emailPodeAtivarConta(email)) {
+      throw forbidden("Este email ainda não foi autorizado para criar uma conta.");
+    }
+
     const supabase = await createSupabaseServerClient();
-    const { data, error } = await supabase.auth.signUp(result.data);
+    const { data, error } = await supabase.auth.signUp({ ...result.data, email });
 
     if (error) {
       throw mapSupabaseAuthError(error, "Não foi possível concluir o cadastro.");

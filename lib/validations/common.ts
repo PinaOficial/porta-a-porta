@@ -23,3 +23,11 @@ export const priceSchema = z.coerce
 export function getPagination(value: { page: number; limit: number }) {
   return { ...value, skip: (value.page - 1) * value.limit };
 }
+
+export const emptyStringToUndefined = (value: unknown) => {
+  if (typeof value === "string" && value.trim() === "") {
+    return undefined;
+  }
+
+  return value;
+};

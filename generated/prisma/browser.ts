@@ -52,6 +52,7 @@ export type condomino_apartamentos = Prisma.condomino_apartamentosModel
  * Model condominos
  * This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
  * This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+ * This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
  */
 export type condominos = Prisma.condominosModel
 /**
@@ -226,3 +227,9 @@ export type usuarios = Prisma.usuariosModel
  * This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
  */
 export type superadmins = Prisma.superadminsModel
+/**
+ * Model convites_admin
+ * This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+ * This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
+ */
+export type convites_admin = Prisma.convites_adminModel

@@ -432,7 +432,8 @@ export const ModelName = {
   webauthn_credentials: 'webauthn_credentials',
   usuario_condominios_admin: 'usuario_condominios_admin',
   usuarios: 'usuarios',
-  superadmins: 'superadmins'
+  superadmins: 'superadmins',
+  convites_admin: 'convites_admin'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -448,7 +449,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "condominios" | "apartamentos" | "carrinho_itens" | "carrinhos" | "categorias_produto" | "condomino_apartamentos" | "condominos" | "pedido_itens" | "pedidos" | "produtos" | "audit_log_entries" | "custom_oauth_providers" | "flow_state" | "identities" | "instances" | "mfa_amr_claims" | "mfa_challenges" | "mfa_factors" | "oauth_authorizations" | "oauth_client_states" | "oauth_clients" | "oauth_consents" | "one_time_tokens" | "refresh_tokens" | "saml_providers" | "saml_relay_states" | "schema_migrations" | "sessions" | "sso_domains" | "sso_providers" | "users" | "webauthn_challenges" | "webauthn_credentials" | "usuario_condominios_admin" | "usuarios" | "superadmins"
+    modelProps: "condominios" | "apartamentos" | "carrinho_itens" | "carrinhos" | "categorias_produto" | "condomino_apartamentos" | "condominos" | "pedido_itens" | "pedidos" | "produtos" | "audit_log_entries" | "custom_oauth_providers" | "flow_state" | "identities" | "instances" | "mfa_amr_claims" | "mfa_challenges" | "mfa_factors" | "oauth_authorizations" | "oauth_client_states" | "oauth_clients" | "oauth_consents" | "one_time_tokens" | "refresh_tokens" | "saml_providers" | "saml_relay_states" | "schema_migrations" | "sessions" | "sso_domains" | "sso_providers" | "users" | "webauthn_challenges" | "webauthn_credentials" | "usuario_condominios_admin" | "usuarios" | "superadmins" | "convites_admin"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -3116,6 +3117,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    convites_admin: {
+      payload: Prisma.$convites_adminPayload<ExtArgs>
+      fields: Prisma.convites_adminFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.convites_adminFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$convites_adminPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.convites_adminFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$convites_adminPayload>
+        }
+        findFirst: {
+          args: Prisma.convites_adminFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$convites_adminPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.convites_adminFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$convites_adminPayload>
+        }
+        findMany: {
+          args: Prisma.convites_adminFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$convites_adminPayload>[]
+        }
+        create: {
+          args: Prisma.convites_adminCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$convites_adminPayload>
+        }
+        createMany: {
+          args: Prisma.convites_adminCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.convites_adminCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$convites_adminPayload>[]
+        }
+        delete: {
+          args: Prisma.convites_adminDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$convites_adminPayload>
+        }
+        update: {
+          args: Prisma.convites_adminUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$convites_adminPayload>
+        }
+        deleteMany: {
+          args: Prisma.convites_adminDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.convites_adminUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.convites_adminUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$convites_adminPayload>[]
+        }
+        upsert: {
+          args: Prisma.convites_adminUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$convites_adminPayload>
+        }
+        aggregate: {
+          args: Prisma.Convites_adminAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateConvites_admin>
+        }
+        groupBy: {
+          args: Prisma.convites_adminGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.Convites_adminGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.convites_adminCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.Convites_adminCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -3183,7 +3258,8 @@ export const ApartamentosScalarFieldEnum = {
   criado_em: 'criado_em',
   atualizado_em: 'atualizado_em',
   ativo: 'ativo',
-  desativado_em: 'desativado_em'
+  desativado_em: 'desativado_em',
+  tipo_unidade: 'tipo_unidade'
 } as const
 
 export type ApartamentosScalarFieldEnum = (typeof ApartamentosScalarFieldEnum)[keyof typeof ApartamentosScalarFieldEnum]
@@ -3245,7 +3321,8 @@ export const CondominosScalarFieldEnum = {
   nome: 'nome',
   data_nascimento: 'data_nascimento',
   criado_em: 'criado_em',
-  atualizado_em: 'atualizado_em'
+  atualizado_em: 'atualizado_em',
+  email: 'email'
 } as const
 
 export type CondominosScalarFieldEnum = (typeof CondominosScalarFieldEnum)[keyof typeof CondominosScalarFieldEnum]
@@ -3713,6 +3790,21 @@ export const SuperadminsScalarFieldEnum = {
 export type SuperadminsScalarFieldEnum = (typeof SuperadminsScalarFieldEnum)[keyof typeof SuperadminsScalarFieldEnum]
 
 
+export const Convites_adminScalarFieldEnum = {
+  id: 'id',
+  email: 'email',
+  condominio_id: 'condominio_id',
+  criado_por_usuario_id: 'criado_por_usuario_id',
+  ativo: 'ativo',
+  consumido_em: 'consumido_em',
+  cancelado_em: 'cancelado_em',
+  criado_em: 'criado_em',
+  atualizado_em: 'atualizado_em'
+} as const
+
+export type Convites_adminScalarFieldEnum = (typeof Convites_adminScalarFieldEnum)[keyof typeof Convites_adminScalarFieldEnum]
+
+
 export const SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -3800,6 +3892,20 @@ export type ListDateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaM
  */
 export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Boolean'>
     
+
+
+/**
+ * Reference to a field of type 'tipo_unidade_moradia'
+ */
+export type Enumtipo_unidade_moradiaFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'tipo_unidade_moradia'>
+
+
+
+/**
+ * Reference to a field of type 'tipo_unidade_moradia[]'
+ */
+export type ListEnumtipo_unidade_moradiaFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'tipo_unidade_moradia[]'>
+
 
 
 /**
@@ -4240,6 +4346,7 @@ export type GlobalOmitConfig = {
   usuario_condominios_admin?: Prisma.usuario_condominios_adminOmit
   usuarios?: Prisma.usuariosOmit
   superadmins?: Prisma.superadminsOmit
+  convites_admin?: Prisma.convites_adminOmit
 }
 
 /* Types for Logging */
@@ -4302,4 +4409,3 @@ export type PrismaAction =
  * `PrismaClient` proxy available in interactive transactions.
  */
 export type TransactionClient = Omit<DefaultPrismaClient, runtime.ITXClientDenyList>
-
