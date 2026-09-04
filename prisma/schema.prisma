@@ -1,0 +1,24 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model condominios {
+  id            String   @id(map: "condominio_pkey") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  nome          String   @db.VarChar(150)
+  descricao     String?
+  cep           String?  @db.VarChar(9)
+  logradouro    String?  @db.VarChar(150)
+  numero        String?  @db.VarChar(20)
+  complemento   String?  @db.VarChar(100)
+  bairro        String?  @db.VarChar(100)
+  cidade        String?  @db.VarChar(100)
+  uf            String?  @db.Char(2)
+  criado_em     DateTime @default(now()) @db.Timestamp(6)
+  atualizado_em DateTime @default(now()) @db.Timestamp(6)
+}
