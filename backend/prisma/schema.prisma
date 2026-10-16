@@ -1,0 +1,242 @@
+generator client {
+  provider        = "prisma-client"
+  output          = "../src/generated/prisma"
+  previewFeatures = ["partialIndexes"]
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model auditoria {
+  id_auditoria  String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id_ator       String      @db.Uuid
+  acao          String      @db.VarChar(100)
+  entidade      String      @db.VarChar(80)
+  entidade_id   String      @db.Uuid
+  id_condominio String?     @db.Uuid
+  metadata      Json?
+  created_at    DateTime    @default(now()) @db.Timestamptz(6)
+  usuario       usuario     @relation(fields: [id_ator], references: [id_usuario], onUpdate: NoAction)
+  condominio    condominio? @relation(fields: [id_condominio], references: [id_condominio], onUpdate: NoAction)
+
+  @@index([id_ator, created_at], map: "auditoria_ator_data_idx")
+  @@index([id_condominio, created_at], map: "auditoria_condominio_data_idx")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model categoria_produto {
+  id_categoria String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  nome         String    @unique @db.VarChar(80)
+  ativo        Boolean   @default(true)
+  produto      produto[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model condominio {
+  id_condominio      String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  cep                String               @db.VarChar(8)
+  nome_residencial   String               @db.VarChar(160)
+  endereco           String               @db.VarChar(255)
+  ativo              Boolean              @default(true)
+  created_at         DateTime             @default(now()) @db.Timestamptz(6)
+  auditoria          auditoria[]
+  vinculo_condominio vinculo_condominio[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model condomino {
+  id_condomino       String              @id @db.Uuid
+  nome_completo      String              @db.VarChar(160)
+  cpf                String              @unique @db.Char(11)
+  data_nascimento    DateTime            @db.Date
+  usuario            usuario             @relation(fields: [id_condomino], references: [id_usuario], onUpdate: NoAction)
+  vinculo_condominio vinculo_condominio?
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model conversa {
+  id_conversa           String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id_pedido             String                  @unique @db.Uuid
+  status_conversa       status_conversa_enum    @default(ATIVA)
+  created_at            DateTime                @default(now()) @db.Timestamptz(6)
+  encerrada_em          DateTime?               @db.Timestamptz(6)
+  pedido                pedido                  @relation(fields: [id_pedido], references: [id_pedido], onUpdate: NoAction)
+  conversa_participante conversa_participante[]
+  mensagem              mensagem[]
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model conversa_participante {
+  id_conversa    String    @db.Uuid
+  id_usuario     String    @db.Uuid
+  joined_at      DateTime  @default(now()) @db.Timestamptz(6)
+  ultimo_lido_em DateTime? @db.Timestamptz(6)
+  conversa       conversa  @relation(fields: [id_conversa], references: [id_conversa], onDelete: Cascade, onUpdate: NoAction)
+  usuario        usuario   @relation(fields: [id_usuario], references: [id_usuario], onUpdate: NoAction)
+
+  @@id([id_conversa, id_usuario])
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model mensagem {
+  id_mensagem  String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id_conversa  String   @db.Uuid
+  id_remetente String   @db.Uuid
+  conteudo     String
+  created_at   DateTime @default(now()) @db.Timestamptz(6)
+  conversa     conversa @relation(fields: [id_conversa], references: [id_conversa], onDelete: Cascade, onUpdate: NoAction)
+  usuario      usuario  @relation(fields: [id_remetente], references: [id_usuario], onUpdate: NoAction)
+
+  @@index([id_conversa, created_at], map: "mensagem_conversa_data_idx")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model pedido {
+  id_pedido               String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id_produto              String                    @db.Uuid
+  id_vinculo_comprador    String                    @db.Uuid
+  quantidade              Int
+  valor_pedido            Decimal                   @db.Decimal(12, 2)
+  status_pedido           status_pedido_enum        @default(SOLICITADO)
+  hora_solicitacao        DateTime                  @default(now()) @db.Timestamptz(6)
+  hora_combinada          DateTime                  @db.Timestamptz(6)
+  ultima_atualizacao      DateTime                  @default(now()) @db.Timestamptz(6)
+  conversa                conversa?
+  produto                 produto                   @relation(fields: [id_produto], references: [id_produto], onUpdate: NoAction)
+  vinculo_condominio      vinculo_condominio        @relation(fields: [id_vinculo_comprador], references: [id_vinculo], onUpdate: NoAction)
+  pedido_status_historico pedido_status_historico[]
+
+  @@index([id_vinculo_comprador, status_pedido], map: "pedido_comprador_status_idx")
+  @@index([id_produto, status_pedido], map: "pedido_produto_status_idx")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model pedido_status_historico {
+  id_historico    String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id_pedido       String              @db.Uuid
+  status_anterior status_pedido_enum?
+  status_novo     status_pedido_enum
+  alterado_por    String              @db.Uuid
+  motivo          String?             @db.VarChar(255)
+  created_at      DateTime            @default(now()) @db.Timestamptz(6)
+  usuario         usuario             @relation(fields: [alterado_por], references: [id_usuario], onUpdate: NoAction)
+  pedido          pedido              @relation(fields: [id_pedido], references: [id_pedido], onUpdate: NoAction)
+
+  @@index([id_pedido, created_at], map: "historico_pedido_data_idx")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model produto {
+  id_produto          String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id_vinculo_vendedor String             @db.Uuid
+  id_categoria        String             @db.Uuid
+  nome_produto        String             @db.VarChar(140)
+  descricao           String
+  preco               Decimal            @db.Decimal(12, 2)
+  estoque             Int
+  ativo               Boolean            @default(true)
+  created_at          DateTime           @default(now()) @db.Timestamptz(6)
+  updated_at          DateTime           @default(now()) @db.Timestamptz(6)
+  pedido              pedido[]
+  categoria_produto   categoria_produto  @relation(fields: [id_categoria], references: [id_categoria], onUpdate: NoAction)
+  vinculo_condominio  vinculo_condominio @relation(fields: [id_vinculo_vendedor], references: [id_vinculo], onUpdate: NoAction)
+  produto_imagem      produto_imagem[]
+
+  @@index([id_categoria, ativo], map: "produto_categoria_ativo_idx")
+  @@index([id_vinculo_vendedor, ativo], map: "produto_vendedor_ativo_idx")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model produto_imagem {
+  id_imagem    String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id_produto   String   @db.Uuid
+  storage_path String   @unique
+  ordem        Int      @default(0) @db.SmallInt
+  created_at   DateTime @default(now()) @db.Timestamptz(6)
+  produto      produto  @relation(fields: [id_produto], references: [id_produto], onDelete: Cascade, onUpdate: NoAction)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model super_admin {
+  id_super_admin String   @id @db.Uuid
+  created_at     DateTime @default(now()) @db.Timestamptz(6)
+  usuario        usuario  @relation(fields: [id_super_admin], references: [id_usuario], onUpdate: NoAction)
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+/// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
+model usuario {
+  id_usuario                                                          String                    @id @db.Uuid
+  email                                                               String                    @db.VarChar(320)
+  status_conta                                                        status_conta_enum         @default(ATIVA)
+  created_at                                                          DateTime                  @default(now()) @db.Timestamptz(6)
+  updated_at                                                          DateTime                  @default(now()) @db.Timestamptz(6)
+  auditoria                                                           auditoria[]
+  condomino                                                           condomino?
+  conversa_participante                                               conversa_participante[]
+  mensagem                                                            mensagem[]
+  pedido_status_historico                                             pedido_status_historico[]
+  super_admin                                                         super_admin?
+  vinculo_condominio_vinculo_condominio_admin_atualizado_porTousuario vinculo_condominio[]      @relation("vinculo_condominio_admin_atualizado_porTousuario")
+  vinculo_condominio_vinculo_condominio_aprovado_porTousuario         vinculo_condominio[]      @relation("vinculo_condominio_aprovado_porTousuario")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model vinculo_condominio {
+  id_vinculo                                               String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id_condomino                                             String              @unique(map: "one_active_membership_per_user", where: raw("(status_vinculo = 'ATIVO'::status_vinculo_enum)")) @db.Uuid
+  id_condominio                                            String              @db.Uuid
+  moradia                                                  String              @db.VarChar(80)
+  admin_condominio                                         Boolean             @default(false)
+  status_vinculo                                           status_vinculo_enum @default(PENDENTE)
+  data_solicitacao                                         DateTime            @default(now()) @db.Timestamptz(6)
+  data_aprovacao                                           DateTime?           @db.Timestamptz(6)
+  data_inicio                                              DateTime?           @db.Timestamptz(6)
+  data_fim                                                 DateTime?           @db.Timestamptz(6)
+  aprovado_por                                             String?             @db.Uuid
+  admin_atualizado_por                                     String?             @db.Uuid
+  admin_atualizado_em                                      DateTime?           @db.Timestamptz(6)
+  pedido                                                   pedido[]
+  produto                                                  produto[]
+  usuario_vinculo_condominio_admin_atualizado_porTousuario usuario?            @relation("vinculo_condominio_admin_atualizado_porTousuario", fields: [admin_atualizado_por], references: [id_usuario], onUpdate: NoAction)
+  usuario_vinculo_condominio_aprovado_porTousuario         usuario?            @relation("vinculo_condominio_aprovado_porTousuario", fields: [aprovado_por], references: [id_usuario], onUpdate: NoAction)
+  condominio                                               condominio          @relation(fields: [id_condominio], references: [id_condominio], onUpdate: NoAction)
+  condomino                                                condomino           @relation(fields: [id_condomino], references: [id_condomino], onUpdate: NoAction)
+
+  @@index([id_condominio, status_vinculo], map: "vinculo_condominio_status_idx")
+}
+
+enum status_conta_enum {
+  ATIVA
+  SUSPENSA
+}
+
+enum status_conversa_enum {
+  ATIVA
+  ENCERRADA
+}
+
+enum status_pedido_enum {
+  SOLICITADO
+  ACEITO
+  RECUSADO
+  CANCELADO
+  CONCLUIDO
+}
+
+enum status_vinculo_enum {
+  PENDENTE
+  ATIVO
+  REJEITADO
+  SUSPENSO
+  ENCERRADO
+}
