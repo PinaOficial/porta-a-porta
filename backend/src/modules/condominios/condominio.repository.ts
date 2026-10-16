@@ -1,10 +1,17 @@
 import type { Prisma } from "../../generated/prisma/client.js";
 import { prisma } from "../../lib/prisma.js";
-import type { ListarCondominiosQuery } from "./condominio.schema.js";
+import type { CriarCondominioBody, ListarCondominiosQuery } from "./condominio.schema.js";
 
 type FiltrosCondominios = Pick<ListarCondominiosQuery, "busca" | "limite"> & {
   deslocamento: number;
 };
+
+export function criarCondominio(tx: Prisma.TransactionClient, dados: CriarCondominioBody) {
+  return tx.condominio.create({
+    data: { nome_residencial: dados.nome_residencial, cep: dados.cep, endereco: dados.endereco },
+    select: { id_condominio: true, nome_residencial: true, cep: true, endereco: true, ativo: true, created_at: true },
+  });
+}
 
 export function buscarCondominioAtivoPorId(idCondominio: string) {
   return prisma.condominio.findFirst({

@@ -2,7 +2,7 @@
 
 Este arquivo é a instrução principal para agentes de código (Codex) que trabalharem neste repositório.
 
-Estado auditado no Prompt 22 (16/10/2026). Para contratos e rastreabilidade, leia [docs/BACKEND_INVENTARIO.md](docs/BACKEND_INVENTARIO.md) e [docs/FRONTEND_HANDOFF.md](docs/FRONTEND_HANDOFF.md). Planejamento antigo não prova que uma rota existe; confira código, schema e testes atuais.
+Contratos auditados no Prompt 22, MVP auditado no Prompt 28 e cadastro exclusivo de condomínios acrescentado no Prompt 29 (16/10/2026). Para contratos e rastreabilidade, leia [docs/BACKEND_INVENTARIO.md](docs/BACKEND_INVENTARIO.md) e [docs/FRONTEND_HANDOFF.md](docs/FRONTEND_HANDOFF.md). Planejamento antigo não prova que uma rota existe; confira código, schema e testes atuais.
 
 Leia este documento **antes de alterar código**.
 
@@ -604,12 +604,13 @@ no frontend.
 
 ## 20. BACKEND IMPLEMENTADO
 
-O prefixo é `/api`. São 27 rotas registradas; tabela extraída das montagens reais dos routers, incluindo chat aninhado. Auth/Supabase controla signup/login/logout/sessão. A solicitação residencial inicial é criada no onboarding; não existe POST /api/vinculos independente. Envio de mensagem usa **/messages**, não /mensagens.
+O prefixo é `/api`. São 28 rotas registradas; tabela extraída das montagens reais dos routers, incluindo chat aninhado. Auth/Supabase controla signup/login/logout/sessão. A solicitação residencial inicial é criada no onboarding; não existe POST /api/vinculos independente. Envio de mensagem usa **/messages**, não /mensagens.
 
 | Método | Rota | Autorização | Objetivo |
 | --- | --- | --- | --- |
 | GET | `/api/health` | Pública | Saúde |
 | GET | `/api/condominios` | JWT, inclusive pré-onboarding/super | Seleção ativa |
+| POST | `/api/admin/condominios` | Somente super admin; conta global não suspensa | Cadastrar condomínio ativo com auditoria atômica |
 | GET | `/api/vinculos/me` | JWT, inclusive histórico/super | Estado residencial |
 | POST | `/api/vinculos/transferencia` | Vínculo ATIVO | Solicitar destino PENDENTE |
 | GET | `/api/admin/vinculos` | Admin local do tenant ou super global | Gestão de vínculos |
@@ -726,7 +727,7 @@ O backend principal está implementado: JWT/JWKS, identidade/onboarding, víncul
 
 Antes de alterar, leia os dois documentos em docs e os módulos/testes reais. Depois de qualquer mudança de contrato, atualize o inventário, handoff e esta tabela. Não documentar route placeholder como endpoint registrado. Arquivos antigos em backend/*.md registram suas respectivas etapas; o catálogo atual consolidado está em docs.
 
-Scripts reais: `npm run build` (raiz, ambos os workspaces), `npm run dev` (ambos), e 29 scripts `test:*` em backend/package.json. Não existem scripts genéricos `typecheck` ou `test`. Cada script de teste executa `tsc -p tsconfig.test.json`; use os existentes e não afirme ter rodado scripts ausentes. Integrações usam ONBOARDING_TEST_DATABASE_URL, aceitam somente localhost/127.0.0.1 e banco `porta_onboarding_teste`; nunca apontar para banco de projeto/produção. Storage/JWKS de testes são simulados. Asserções de concorrência exigem PostgreSQL real descartável, não apenas mocks.
+Scripts reais: `npm run build` (raiz, ambos os workspaces), `npm run dev` (ambos), e 31 scripts `test:*` em backend/package.json. Não existem scripts genéricos `typecheck` ou `test`. Cada script de teste executa `tsc -p tsconfig.test.json`; use os existentes e não afirme ter rodado scripts ausentes. Integrações usam ONBOARDING_TEST_DATABASE_URL, aceitam somente localhost/127.0.0.1 e banco `porta_onboarding_teste`; nunca apontar para banco de projeto/produção. Storage/JWKS de testes são simulados. Asserções de concorrência exigem PostgreSQL real descartável, não apenas mocks.
 
 ## 26. Convenções obrigatórias da API
 
@@ -833,3 +834,16 @@ MVP auditado no Prompt 28:
 - Browser completo pode usar preview do build com configurações públicas fictícias. Evitar hot reload durante a medição. Mocks de erro de Auth devem respeitar o protocolo/header de versão do SDK instalado; logout entre abas é exercitado pelo Auth real do SDK, sem importar arquivos de src no teste.
 - Verificadas 12 telas protegidas nos viewports 360×800, 390×844, 768×1024 e 1280×800, labels/alt/IDs/foco e overflow; leitor de tela, teclado virtual físico e Supabase remoto continuam pendentes de homologação.
 - MVP_READY_FOR_USER_TESTING = YES para testes internos controlados; não significa produção/deploy ou configuração remota validada. Evidências, riscos e próximos passos: [docs/MVP_AUDITORIA_FINAL.md](docs/MVP_AUDITORIA_FINAL.md) e [docs/MVP_TESTES_MANUAIS.md](docs/MVP_TESTES_MANUAIS.md). Parar após auditoria/correções.
+
+
+Cadastro de condomínios implementado no Prompt 29 (16/10/2026):
+
+- Superadmin cadastra condomínios; admin local e morador não cadastram, mesmo por HTTP direto ou com claims/body forjados. POST /api/admin/condominios usa autenticar + exigirSuperAdmin() e autorização repetida no service administrativo.
+- Body estrito: nome_residencial trim 1..160, cep exatamente oito dígitos, endereco trim 1..255. Campos extras são rejeitados. Sem unicidade por CEP/nome; sem DDL/alteração Prisma. UUID, ativo=true e created_at usam defaults do banco.
+- Retorna 201 {dados:{id_condominio,nome_residencial,cep,endereco,ativo,created_at ISO UTC}}. Erros 400 VALIDATION_ERROR, 401 UNAUTHENTICATED, 403 FORBIDDEN/ACCOUNT_SUSPENDED e 500 INTERNAL_ERROR sanitizado.
+- Service coordena criarCondominio e criarAuditoria na mesma transação ReadCommitted. CREATE_CONDOMINIUM usa o ator autenticado e o condomínio criado em entidade_id/id_condominio; metadata somente {ativo:true}. Falha de auditoria reverte criação. Nenhum perfil/vínculo é criado automaticamente.
+- /admin/condominios é rota React recarregável, guard somenteSuper e link exclusivo do super em /admin. Consulta o catálogo ativo GET /api/condominios com busca/paginação, sem novo GET administrativo. Formulário Zod normaliza CEP mascarado, usa client Bearer e apenas três campos; trava submit. Após 201 mostra o registro real e refaz busca pelo nome. Resultado incerto de rede/5xx exige conferir catálogo antes de reenvio explícito; nenhum retry automático.
+- Seletores de onboarding/transferência não têm cache persistente: releem ao abrir/buscar/atualizar. Primeiro morador recebe PENDENTE/admin=false; super aprova sem admin local prévio e promove explicitamente pelo PATCH existente.
+- Novos scripts reais: test:criar-condominio e test:criar-condominio:integration. Integração mantém allowlist local/porta_onboarding_teste. Rotas recontadas pela AST das montagens: 28 HTTP; 21 registros React. Evidências e arquivos em [docs/CONDOMINIOS_SUPERADMIN.md](docs/CONDOMINIOS_SUPERADMIN.md).
+- Escopo somente criação/consulta ativa; sem edição, exclusão, desativação, ViaCEP, síndico automático ou deploy. Supabase real continua sujeito à homologação no ambiente de demonstração.
+- Validação final do Prompt 29: build/TypeScript passaram; 31 scripts backend, 487 testes (167 unitários/320 PG); frontend Node 64; Chromium 172; jornada integrada 1, total 724, sem falhas/skips finais. Duas fixtures antigas de pedido tiveram data vencida corrigida para 2099, sem alterar regras. Domínio integrado usa PG/Express reais e Auth/JWKS/Storage simulados; Supabase remoto não homologado. MVP continua pronto para a próxima rodada de homologação interna controlada.

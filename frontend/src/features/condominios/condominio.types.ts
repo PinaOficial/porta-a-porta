@@ -4,3 +4,4 @@ export interface Condominio {
   cep: string;
   endereco: string;
 }
+export interface CondominioCriado extends Condominio { ativo: boolean; created_at: string }

@@ -13,3 +13,7 @@ export interface ListaCondominios {
     total_paginas: number;
   };
 }
+
+export interface ResultadoCriacaoCondominio {
+  dados: CondominioOnboarding & { ativo: boolean; created_at: string };
+}

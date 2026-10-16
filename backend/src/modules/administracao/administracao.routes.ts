@@ -6,9 +6,12 @@ import { aprovarVinculoController, listarVinculosPendentesController, rejeitarVi
 import { decisaoVinculoParamsSchema, listarVinculosPendentesQuerySchema } from "../vinculos/vinculo.schema.js";
 import { atualizarStatusContaBodySchema } from "../usuarios/usuario.schema.js";
 import { atualizarAdminVinculoBodySchema, listarVinculosQuerySchema } from "./administracao.schema.js";
-import { alterarAdminVinculoController, alterarStatusContaController, listarVinculosAdminController } from "./administracao.controller.js";
+import { alterarAdminVinculoController, alterarStatusContaController, criarCondominioAdminController, listarVinculosAdminController } from "./administracao.controller.js";
+import { criarCondominioBodySchema } from "../condominios/condominio.schema.js";
 
 export const administracaoRoutes = Router();
+
+administracaoRoutes.post("/condominios", autenticar, exigirSuperAdmin(), validarBody(criarCondominioBodySchema), criarCondominioAdminController);
 
 administracaoRoutes.get("/vinculos", autenticar, exigirAdmin(), validarSemBody, validarQuery(listarVinculosQuerySchema), listarVinculosAdminController);
 administracaoRoutes.patch("/vinculos/:id/admin", autenticar, exigirAdmin(), validarParams(decisaoVinculoParamsSchema), validarBody(atualizarAdminVinculoBodySchema), alterarAdminVinculoController);

@@ -370,7 +370,7 @@ test("suspensão posterior mantém arquivo e registro e bloqueia novo upload", a
 test("upload preserva pedido, histórico, conversa, auditoria e contrato das leituras", async () => {
   const produto = await criarProduto(morador.vinculo.id_vinculo);
   const pedido = await prisma.pedido.create({ data: { id_produto: produto.id_produto, id_vinculo_comprador: vizinho.vinculo.id_vinculo,
-    quantidade: 1, valor_pedido: "25.90", hora_combinada: new Date("2026-10-16T20:00:00Z") } });
+    quantidade: 1, valor_pedido: "25.90", hora_combinada: new Date("2099-10-16T20:00:00Z") } });
   const historico = await prisma.pedido_status_historico.create({ data: { id_pedido: pedido.id_pedido, status_novo: "SOLICITADO", alterado_por: vizinho.id } });
   const conversa = await prisma.conversa.create({ data: { id_pedido: pedido.id_pedido } });
   const auditorias = await prisma.auditoria.count();

@@ -207,3 +207,20 @@ Backend, schema Prisma, SQL, manifests, lock, contratos auditados e arquivos de 
 - [x] Encerrados os processos iniciados pela auditoria: dev da raiz após smoke (SIGINT intencional), Vite/preview de teste e PostgreSQL local descartável. Arquivos locais de evidência preservados.
 
 **MVP_READY_FOR_USER_TESTING = YES.** As jornadas A–F essenciais têm evidência local integrada, a API impõe autorização/tenant, build/testes passam e não há P0/P1 demonstrado em aberto. O alcance é **testes internos controlados do MVP**, sem homologação remota, garantia de produção ou deploy. A próxima etapa é executar o roteiro manual com contas de teste e validar a configuração de demonstração, somente quando solicitado.
+
+## Adendo Prompt 29 — 16/10/2026
+
+Nova entrega autorizada: superadmin cadastra condomínios; admin local não cadastra. Evidências do Prompt 28 acima permanecem históricas. Estado atual: **28 operações Express** (recontagem AST de imports/montagens), **21 registros React**; nova POST /api/admin/condominios e página /admin/condominios, sem GET administrativo adicional.
+
+- [x] JWT/conta global/super resolvidos pelo backend, exigirSuperAdmin() e checagem no service; morador/admins de dois tenants recebem 403 mesmo forjando privilégios.
+- [x] Body de três campos estrito, limites reais, DTO/ISO/defaults do PostgreSQL, CEP/nome repetidos permitidos; sem DDL/Prisma/dependência nova.
+- [x] Condomínio e CREATE_CONDOMINIUM atômicos; ator real/metadata mínima; falha de auditoria provoca rollback PostgreSQL.
+- [x] Menu/guard somente super, formulário Zod, cancelamento, trava de submit, catálogo ativo paginado/busca/refresh, sucesso real e resultado de rede incerto sem repetição automática.
+- [x] Novo destino disponível por GET/busca e onboarding PENDENTE; primeiro aprovado pelo super sem admin prévio; promoção explícita não concede criação ao local.
+- [x] Build/TypeScript de ambos passaram. Todos os 31 scripts backend aprovados: 487 testes (167 unitários/320 PostgreSQL). Frontend Node 64; Chromium 172/172; jornada integrada 1/1; zero falhas/skips finais. Total 724, sem somar reexecuções.
+- [x] Fixtures antigas de status/imagem tinham horário combinado fixo já passado; alteradas para 2099, sem mudar regras de produção. Expectativas de texto/URL dos novos testes corrigidas; um timeout de refresh anterior passou isolado e na suíte completa final.
+- [x] AGENTS, inventário, handoff e roteiro manual atualizados; artefatos gerados e dependências privadas não incorporados. Preview/PG descartável encerrados após os testes.
+
+Relatório com arquivos, scripts/resultados, curl e comandos: [CONDOMINIOS_SUPERADMIN.md](CONDOMINIOS_SUPERADMIN.md). Mocks de domínio são usados na suíte Chromium; jornada integrada usa Express/Prisma/PostgreSQL reais, com Auth/JWKS/Storage simulados. Quatro larguras e captura mobile da nova página foram verificadas. Avisos não bloqueantes de bundle/Zod/pg permanecem; não houve refatoração global.
+
+**MVP_READY_FOR_USER_TESTING = YES**, para próxima rodada de homologação interna controlada. Não houve homologação contra Supabase remoto nem deploy. Validar configuração real do Supabase, e-mails, permissões e Storage no ambiente de demonstração; dispositivos físicos/leitor de tela continuam no roteiro manual.

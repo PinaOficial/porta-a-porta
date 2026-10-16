@@ -1,12 +1,12 @@
 # Contratos para o frontend — backend auditado
 
-Referência do Prompt 22, 16/10/2026. Consumir os contratos reais abaixo e o [inventário completo](BACKEND_INVENTARIO.md). Nenhuma tela foi implementada nesta auditoria.
+Contratos do Prompt 22 com adendo do Prompt 29, 16/10/2026. Consumir os contratos reais abaixo e o [inventário completo](BACKEND_INVENTARIO.md). O texto anterior registra a auditoria do Prompt 22; a seção do Prompt 29 abaixo descreve a nova interface.
 
 ## Convenções comuns
 
 Base de desenvolvimento: `http://localhost:3000/api`; `npm run dev` na raiz inicia API e Vite. `VITE_API_URL` pode substituir a base. Auth usa apenas URL/publishable key públicas do Supabase (`VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`). Secret key e DATABASE_URL pertencem somente ao backend. O arquivo `vite-env.d.ts` agora fornece os tipos de `import.meta.env`; não constitui implementação de UI.
 
-Todas as rotas de domínio exigem `Authorization: Bearer <ACCESS_TOKEN>`; só `/health` é público. O wrapper atual `frontend/src/lib/api.ts` é mínimo e **ainda não injeta** esse header: providers, proteção de rotas e client com sessão serão trabalho do próximo prompt. Não acessar tabelas de domínio via `supabase.from()`. Não enviar senha à API Express.
+Todas as rotas de domínio exigem `Authorization: Bearer <ACCESS_TOKEN>`; só `/health` é público. O client `frontend/src/lib/api.ts` já injeta Bearer da sessão (Prompt 23), preserva envelopes, suporta FormData/204 e renova uma vez somente após 401 UNAUTHENTICATED com token novo da mesma identidade. Não repete escrita por falha de rede. Não acessar tabelas de domínio via `supabase.from()`. Não enviar senha à API Express.
 
 Body JSON de escrita é estrito, salvo upload multipart. Omitir campos não editáveis/ausentes; não enviar undefined/null como substituto indiscriminado. UUIDs são strings. Valores monetários são **strings decimais**, nunca autoridade numérica do cliente para pedidos. `preco` é editável somente na gestão do produto; `valor_pedido` é calculado/congelado pelo servidor. Inteiros continuam números JSON. Timestamps retornam ISO UTC; enviar `hora_combinada` com timezone/offset e converter horário local conscientemente.
 
@@ -286,3 +286,30 @@ Não existe GET público de auditoria: ações críticas são registradas atomic
 ## Limites e próximo prompt
 
 Contratos auditados estão prontos para iniciar infraestrutura de frontend, providers de Auth, API client com Bearer, proteção de rotas, login/cadastro e onboarding/estado residencial. Manter histórico acessível independentemente de ATIVO; manter administração global separada da residência. Não adicionar pagamento, notificações, reputação, leitura de chat ou novos estados. Não houve implementação de interface neste prompt.
+
+
+## Prompt 29 — Condomínios exclusivos do superadmin (16/10/2026)
+
+Navegação real: /admin → Condomínios → Consultar e cadastrar condomínios → **/admin/condominios**. Página única com catálogo ativo e botão Cadastrar condomínio que abre o formulário. Link e rota exigem super_admin===true; GuardAdmin com somenteSuper mantém ferramentas locais existentes e redireciona local a /admin, morador a seu destino residencial. Refresh direto é suportado. Shell usa chave de identidade/papel/residência, descartando resultados privados antigos.
+
+`POST /admin/condominios`, Bearer automático via criarCondominioAdmin em condominio.api.ts. Body estrito:
+
+```json
+{"nome_residencial":"Residencial Jardim das Flores","cep":"72000000","endereco":"Rua Fictícia, 123"}
+```
+
+Nome e endereço trim com limites 1..160/1..255; CEP exatamente oito dígitos no backend. Formulário aceita 00000-000 e normaliza antes do POST. Não enviar ativo, UUID, ator, datas ou outros campos. Não há consulta externa de CEP, síndico nem unicidade por CEP/nome.
+
+Sucesso 201, valores retornados do PostgreSQL:
+
+```json
+{"dados":{"id_condominio":"<UUID_GERADO>","nome_residencial":"Residencial Jardim das Flores","cep":"72000000","endereco":"Rua Fictícia, 123","ativo":true,"created_at":"2026-10-16T20:00:00.000Z"}}
+```
+
+Criação + auditoria CREATE_CONDOMINIUM são atômicas. Erros: 400 VALIDATION_ERROR com fieldErrors, 401 UNAUTHENTICATED, 403 FORBIDDEN/ACCOUNT_SUSPENDED, 500 INTERNAL_ERROR sanitizado. Local/morador recebem 403 na API mesmo com privilégios forjados. Suspensão global continua bloqueando tudo.
+
+Formulário tem labels/required, erros por campo, fieldset/botão bloqueados durante envio, trava síncrona, cancelar e confirmação real. 400 preserva dados; 403 refaz providers/guard. Rede/5xx/resposta ilegível têm orientação de resultado incerto e bloqueiam envio até verificação explícita. Não há idempotência HTTP nem repetição automática. Após 201 mantém administração, mostra ID/nome/CEP/endereço, fecha formulário e refaz GET /condominios por nome/página 1. A confirmação mostra o recém-criado mesmo se houver nomes repetidos ou mais de uma página.
+
+Catálogo usa GET /condominios existente (dados[] + paginacao raiz, UI 20, máximo API 50), busca/página na URL, loading/vazio/erro/retry e AbortController. Sem cache persistente a invalidar; seletores de onboarding/transferência releem ao montar/buscar/refazer consulta. O novo condomínio aceita onboarding sem admin local; primeiro vínculo é PENDENTE/admin=false, super aprova e opcionalmente promove pelo PATCH /admin/vinculos/:id/admin. Nenhum privilégio automático.
+
+Testes Node, Chromium com APIs simuladas e jornada browser/Express/PostgreSQL local estão descritos em [CONDOMINIOS_SUPERADMIN.md](CONDOMINIOS_SUPERADMIN.md). Auth/JWKS/Storage remotos e configuração Supabase de demonstração continuam pendentes de homologação. Sem edição/desativação/exclusão ou GET administrativo novo.

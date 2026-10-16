@@ -1,6 +1,6 @@
 # Inventário e auditoria do backend
 
-Auditoria de 16/10/2026 (Prompt 22). Fontes: código atual, Prisma introspectado, DDL existente e testes. O roteiro `.docx` é referência de domínio; não prova implementação.
+Auditoria de 16/10/2026 (Prompt 22), com adendo de criação no Prompt 29. Fontes: código atual, Prisma introspectado, DDL existente e testes. O roteiro `.docx` é referência de domínio; não prova implementação.
 
 ## Descoberta e comparação
 
@@ -8,7 +8,7 @@ Rotas descobertas percorrendo a AST TypeScript de `app.use`, montagens de `apiRo
 
 **Antes: 25 rotas. Depois: 27.** As 25 esperadas no Prompt 22 existem e estão **OK**. Nenhuma esperada ausente/parcial e nenhuma extra suspeita/legada. Duas leituras estavam ausentes para as telas de Produto e Perfil: foram implementadas como **ROTA EXTRA JUSTIFICADA**, `GET /api/produtos/:id` e `GET /api/usuarios/me`.
 
-Por módulo de router: health 1; condomínios 1; usuários 2; vínculos 2; administração 7; categorias 1; produtos 8 (incluem 2 de imagens); pedidos 3; chat 2. Auditoria e histórico de pedido são persistência interna, sem rotas próprias.
+Estado atual (Prompt 29), 28 rotas. Por módulo de router: health 1; condomínios 1; usuários 2; vínculos 2; administração 8; categorias 1; produtos 8 (incluem 2 de imagens); pedidos 3; chat 2. Auditoria e histórico de pedido são persistência interna, sem rotas próprias.
 
 ## Rotas reais
 
@@ -18,6 +18,7 @@ JWT na tabela significa Bearer Supabase válido, inclusive bloqueio de conta glo
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | GET | /api/health | routes | Saúde | Não | Pública | — | Ignorada | — | 200 | {status,projeto} | — | — | Não | [onboarding.integration.test.ts](../backend/tests/onboarding.integration.test.ts) | OK |
 | GET | /api/condominios | condominios | Seleção ativa | JWT | JWT, inclusive pré-onboarding/super | — | busca≤160; pagina=1; limite=20≤50 | — | 200 | dados: Condominio[]; paginacao | VALIDATION_ERROR | condominio | RepeatableRead página/count | [condominio.test.ts](../backend/tests/condominio.test.ts); [onboarding.integration.test.ts](../backend/tests/onboarding.integration.test.ts) | OK |
+| POST | /api/admin/condominios | administracao/condominios | Cadastrar condomínio ativo | JWT | Exclusivo super admin; local/morador 403 | — | Ignorada | nome_residencial trim 1..160; cep 8 dígitos; endereco trim 1..255; estrito | 201 | dados:{id_condominio,nome_residencial,cep,endereco,ativo,created_at ISO} | FORBIDDEN, ACCOUNT_SUSPENDED, VALIDATION_ERROR, INTERNAL_ERROR | condominio,auditoria | ReadCommitted; criação + auditoria atômicas | [criar-condominio.test.ts](../backend/tests/criar-condominio.test.ts); [criar-condominio.integration.test.ts](../backend/tests/criar-condominio.integration.test.ts) | OK |
 | GET | /api/vinculos/me | vinculos | Estado residencial | JWT | JWT, inclusive histórico/super | — | Ignorada | — | 200 | dados: SituacaoResidencial | INTERNAL_ERROR em inconsistência | usuario,condomino,super_admin,vinculo_condominio,condominio | RepeatableRead | [vinculo.test.ts](../backend/tests/vinculo.test.ts); [vinculo.integration.test.ts](../backend/tests/vinculo.integration.test.ts); [aprovar-vinculo.integration.test.ts](../backend/tests/aprovar-vinculo.integration.test.ts) | OK |
 | POST | /api/vinculos/transferencia | vinculos | Solicitar destino PENDENTE | JWT | Vínculo ATIVO | — | Ignorada | id_condominio:UUID,moradia:trim 1..80 | 201 | dados: ResultadoSolicitacaoTransferencia | MEMBERSHIP_REQUIRED, CONDOMINIUM_NOT_FOUND, CONDOMINIUM_INACTIVE, SAME_CONDOMINIUM, MEMBERSHIP_PENDING | condomino,vinculo_condominio,condominio | ReadCommitted + lock perfil/vínculo | [admin-vinculo.test.ts](../backend/tests/admin-vinculo.test.ts); [admin-vinculo.integration.test.ts](../backend/tests/admin-vinculo.integration.test.ts); [aprovar-vinculo.integration.test.ts](../backend/tests/aprovar-vinculo.integration.test.ts) | OK |
 | GET | /api/admin/vinculos | administracao | Gestão de vínculos | JWT | Admin local do tenant ou super global | — | busca≤160,status enum,pagina=1,limite=20≤100,id_condominio | — | 200 | dados: VinculoAdmin[]; paginacao | FORBIDDEN, FORBIDDEN_CROSS_TENANT, VALIDATION_ERROR | vinculo_condominio,condomino,condominio | RepeatableRead página/count | [admin-vinculo.test.ts](../backend/tests/admin-vinculo.test.ts); [admin-vinculo.integration.test.ts](../backend/tests/admin-vinculo.integration.test.ts); [aprovar-vinculo.integration.test.ts](../backend/tests/aprovar-vinculo.integration.test.ts) | OK |
@@ -52,6 +53,7 @@ Arquivos abaixo são relativos à raiz. Os nomes de schemas/middlewares são ext
 | --- | --- | --- | --- | --- | --- |
 | GET /api/health | [index.ts](../backend/src/routes/index.ts#L12) | — | inline: health | handler inline | — |
 | GET /api/condominios | [condominio.routes.ts](../backend/src/modules/condominios/condominio.routes.ts#L9) | autenticar; validarQuery(listarCondominiosQuerySchema) | [listarCondominiosController](../backend/src/modules/condominios/condominio.controller.ts) | listarCondominiosDisponiveis | listarCondominiosAtivos |
+| POST /api/admin/condominios | [administracao.routes.ts](../backend/src/modules/administracao/administracao.routes.ts) | autenticar; exigirSuperAdmin(); validarBody(criarCondominioBodySchema) | criarCondominioAdminController | cadastrarCondominioAdmin; revalida super_admin===true | criarCondominio (condominio.repository); criarAuditoria |
 | GET /api/vinculos/me | [vinculo.routes.ts](../backend/src/modules/vinculos/vinculo.routes.ts#L10) | autenticar | [consultarMeuVinculoController](../backend/src/modules/vinculos/vinculo.controller.ts) | consultarMinhaSituacaoResidencial | buscarSituacaoResidencialDoUsuario |
 | POST /api/vinculos/transferencia | [vinculo.routes.ts](../backend/src/modules/vinculos/vinculo.routes.ts#L11) | autenticar; exigirVinculoAtivo(); validarBody(solicitarTransferenciaBodySchema) | [solicitarTransferenciaController](../backend/src/modules/vinculos/vinculo.controller.ts) | solicitarTransferencia | vinculo.repository + buscarCondominioParaTransferencia + buscarVinculoBloqueadoParaPedido |
 | GET /api/admin/vinculos | [administracao.routes.ts](../backend/src/modules/administracao/administracao.routes.ts#L13) | autenticar; exigirAdmin(); validarSemBody; validarQuery(listarVinculosQuerySchema) | [listarVinculosAdminController](../backend/src/modules/administracao/administracao.controller.ts) | listarVinculosAdmin | listarVinculosAdministrativos |
@@ -181,6 +183,7 @@ POST admite somente partes, deriva remetente de req.auth, normaliza texto de 1..
 
 | Ação real | Entidade | Condomínio | Metadata |
 | --- | --- | --- | --- |
+| CREATE_CONDOMINIUM | condominio | criado | ativo:true, sem nome/endereço/PII |
 | APPROVE_MEMBERSHIP | vinculo_condominio | destino/alvo | PENDENTE → ATIVO; transferência adiciona dois vínculos e ATIVO → ENCERRADO |
 | REJECT_MEMBERSHIP | vinculo_condominio | alvo | PENDENTE → REJEITADO |
 | SUSPEND_MEMBERSHIP | vinculo_condominio | alvo | ATIVO → SUSPENSO |
@@ -315,3 +318,14 @@ Não há POST /vinculos independente, edição de Perfil, reativação local de 
 READY_FOR_FRONTEND = YES
 
 Os contratos necessários às telas definidas estão disponíveis. Não há bloqueio concreto de backend remanescente para iniciar o frontend. Limites de escopo e configuração remota não foram apresentados como funcionalidades já verificadas em produção. Parar nesta auditoria; não iniciar interface neste prompt.
+
+
+## Adendo Prompt 29 — 16/10/2026
+
+Superadmin cadastra condomínios; admin local não cadastra. A nova rota POST /api/admin/condominios foi recontada nas montagens Express: **28 operações**, administração agora com 8. Não existe GET /api/admin/condominios. O GET autenticado anterior mantém dados[]/paginacao raiz, busca e limite máximo 50 e passa a incluir o novo ativo naturalmente.
+
+O DDL e schema introspectado já têm UUID/default ativo/data, VARCHAR 160/8/255 e CHECK de CEP; não há UNIQUE por CEP/nome. Nenhuma alteração estrutural. Repository seleciona somente os seis campos do DTO, envia somente os três editáveis, sem mass assignment. Criação e CREATE_CONDOMINIUM acontecem na mesma transação; ator vem de req.auth, entidade/ID e id_condominio referem ao registro criado, metadata {ativo:true}. Nenhuma criação automática de identidade, vínculo ou privilégio.
+
+Autenticação resolve super na tabela e bloqueia SUSPENSA; middleware exigirSuperAdmin() precede Zod; service também exige super_admin===true. Admins de dois tenants/moradores são 403 mesmo com body/claims forjados. Erros de parser/Zod 400, ausência/JWT inválido 401, conta suspensa 403, falha inesperada 500 sanitizada. Nenhum 409 por coincidência de CEP/nome.
+
+Novos testes unitários e HTTP/PostgreSQL exercitam defaults/DTO, efeitos exatos, rollback, GET por busca e ciclo onboarding PENDENTE → primeiro aprovado pelo super sem admin prévio → promoção explícita → local continua proibido. Relatório, comandos, resultados atuais e lista de arquivos: [CONDOMINIOS_SUPERADMIN.md](CONDOMINIOS_SUPERADMIN.md). As contagens de 475 testes/27 rotas nas seções da auditoria anterior são evidência histórica do Prompt 22.

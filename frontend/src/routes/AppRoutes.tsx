@@ -17,6 +17,7 @@ import { ChatPedidoPage } from "../features/chat/ChatPedidoPage";
 import { PerfilPage } from "../features/perfil/PerfilPage";
 import { TransferenciaPage } from "../features/vinculos/TransferenciaPage";
 import { AdminPage } from "../features/administracao/AdminPage";
+import { CondominiosAdminPage } from "../features/administracao/CondominiosAdminPage";
 import { VinculosAdminPage } from "../features/administracao/VinculosAdminPage";
 import { podeAdministrar } from "../features/administracao/administracao.regras";
 
@@ -57,12 +58,13 @@ function Inicio() {
   if (estado === "CONTA_SUSPENSA" || estado === "ERRO") return <Bloqueio suspensa={estado === "CONTA_SUSPENSA"} />;
   return <Navigate to={destinos[estado] ?? "/login"} replace />;
 }
-function GuardAdmin({ children }: { children: ReactNode }) {
+function GuardAdmin({ children, somenteSuper = false }: { children: ReactNode; somenteSuper?: boolean }) {
   const estado = useEstadoAplicacao();
   const { meuUsuario, situacaoResidencial } = useEstadoUsuario();
   if (estado === "CARREGANDO") return <Carregamento />;
   if (estado === "CONTA_SUSPENSA" || estado === "ERRO") return <Bloqueio suspensa={estado === "CONTA_SUSPENSA"} />;
   if (!podeAdministrar(meuUsuario, situacaoResidencial)) return <Navigate to={destinos[estado] ?? "/login"} replace />;
+  if (somenteSuper && meuUsuario?.super_admin !== true) return <Navigate to="/admin" replace />;
   // Uma mudança de identidade, papel ou residência descarta listas e resultados do escopo anterior.
   return <ShellPage key={`${meuUsuario?.id_usuario}-${meuUsuario?.super_admin}-${situacaoResidencial?.vinculo_ativo?.id_vinculo}`} administracao>{children}</ShellPage>;
 }
@@ -93,6 +95,7 @@ export function AppRoutes() {
     <Route path="/perfil" element={<GuardHistorico observador><ShellPage historico><PerfilPage /></ShellPage></GuardHistorico>} />
     <Route path="/perfil/transferencia" element={<Guard permitido="USUARIO_ATIVO"><ShellPage><TransferenciaPage /></ShellPage></Guard>} />
     <Route path="/admin" element={<GuardAdmin><AdminPage /></GuardAdmin>} />
+    <Route path="/admin/condominios" element={<GuardAdmin somenteSuper><CondominiosAdminPage /></GuardAdmin>} />
     <Route path="/admin/vinculos" element={<GuardAdmin><VinculosAdminPage key="geral" /></GuardAdmin>} />
     <Route path="/admin/vinculos/pendentes" element={<GuardAdmin><VinculosAdminPage key="pendentes" pendentes /></GuardAdmin>} />
     <Route path="*" element={<Inicio />} />

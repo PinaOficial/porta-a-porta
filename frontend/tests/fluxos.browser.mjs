@@ -72,6 +72,17 @@ async function preparar(t, opcoes = {}) {
       if (erro.codigo === "ACCOUNT_SUSPENDED") estado.modo = "suspensa";
       return route.fulfill({ status: erro.status, json: { erro: erro.codigo, detalhes: erro.detalhes }, headers });
     }
+    if (url.pathname === "/api/admin/condominios" && req.method() === "POST") {
+      if (estado.atrasoCondominio) await new Promise(resolve => setTimeout(resolve, estado.atrasoCondominio));
+      if (estado.erroCondominio) {
+        if (estado.erroCondominio.status === 403) estado.modo = "admin";
+        return falhar(estado.erroCondominio);
+      }
+      const dados = { ...req.postDataJSON(), id_condominio: destinoCondominio.id_condominio, ativo: true, created_at: "2026-10-16T20:00:00.000Z" };
+      estado.catalogoCondominios = [dados];
+      if (estado.perderRespostaCondominio) return route.abort("failed");
+      return route.fulfill({ status: 201, json: { dados }, headers });
+    }
     if (url.pathname === "/api/vinculos/transferencia") {
       if (estado.atrasoTransferencia) await new Promise(resolve => setTimeout(resolve, estado.atrasoTransferencia));
       if (estado.erroTransferencia) {
@@ -248,7 +259,10 @@ async function preparar(t, opcoes = {}) {
       if (estado.destinoPendente) dados.solicitacao_pendente = estado.destinoPendente;
       return route.fulfill({ json: { dados }, headers });
     }
-    if (url.pathname.endsWith("/condominios")) return route.fulfill({ json: { dados: url.searchParams.get("busca") === "Ausente" ? [] : (estado.catalogoCondominios ?? [condominio]), paginacao: { pagina: Number(url.searchParams.get("pagina")), limite: 20, total: 21, total_paginas: 2 } }, headers });
+    if (url.pathname.endsWith("/condominios")) {
+      if (estado.erroCatalogo) return falhar({ status: 500, codigo: "INTERNAL_ERROR" });
+      return route.fulfill({ json: { dados: url.searchParams.get("busca") === "Ausente" ? [] : (estado.catalogoCondominios ?? [condominio]), paginacao: { pagina: Number(url.searchParams.get("pagina")), limite: 20, total: 21, total_paginas: 2 } }, headers });
+    }
     if (url.pathname.endsWith("/onboarding")) {
       if (estado.erroPost) return route.fulfill({ status: estado.erroPost.status, json: estado.erroPost.json, headers });
       estado.modo = "pendente";
@@ -1336,4 +1350,90 @@ for (const [codigo, mensagem] of [["invalid_credentials", "E-mail ou senha incor
   await page.goto(`${origem}/login`); await entrar(page); await visivel(page, mensagem);
   assert.equal(await page.getByLabel("E-mail", { exact: true }).inputValue(), "morador@example.com");
   assert.equal(new URL(page.url()).pathname, "/login"); assert.equal(estado.chamadas.length, 0);
+});
+
+// Prompt 29: contratos de domínio simulados; SDK Auth e client de produção reais.
+const cadastrosCondominio = estado => estado.chamadas.filter(c => c.caminho === "/api/admin/condominios" && c.metodo === "POST");
+async function abrirCadastroCondominio(page) {
+  await page.goto(`${origem}/admin/condominios`);
+  await page.getByRole("button", { name: "Cadastrar condomínio", exact: true }).click();
+}
+async function preencherCondominio(page) {
+  await page.getByLabel("Nome do condomínio/residencial *", { exact: true }).fill(" Novo Residencial ");
+  await page.getByLabel("CEP *", { exact: true }).fill("72000-000");
+  await page.getByLabel("Endereço completo *", { exact: true }).fill(" Rua Fictícia, 1 ");
+}
+test("P29 super vê Condomínios, abre formulário e refresh direto respeita guard", async t => {
+  const { page } = await preparar(t, { sessao: true, modo: "super" });
+  await page.goto(`${origem}/admin`); await page.getByRole("link", { name: "Consultar e cadastrar condomínios" }).click();
+  await page.reload(); await page.getByRole("heading", { name: "Condomínios", exact: true }).waitFor();
+  await page.getByRole("button", { name: "Cadastrar condomínio", exact: true }).click();
+  await page.getByRole("heading", { name: "Novo condomínio", exact: true }).waitFor();
+  await page.getByRole("button", { name: "Cancelar", exact: true }).click();
+  assert.equal(await page.getByLabel("CEP *", { exact: true }).count(), 0);
+});
+for (const modo of ["admin", "ativo"]) test(`P29 ${modo} não vê cadastro nem acessa URL direta`, async t => {
+  const { page, estado } = await preparar(t, { sessao: true, modo });
+  await page.goto(`${origem}/admin/condominios`); await caminho(page, modo === "admin" ? "/admin" : "/vitrine");
+  await page.reload(); await caminho(page, modo === "admin" ? "/admin" : "/vitrine");
+  assert.equal(await page.getByRole("link", { name: "Consultar e cadastrar condomínios" }).count(), 0);
+  assert.equal(await page.getByRole("button", { name: "Cadastrar condomínio" }).count(), 0);
+  assert.equal(cadastrosCondominio(estado).length, 0);
+});
+test("P29 validação local por campo impede POST vazio e CEP inválido", async t => {
+  const { page, estado } = await preparar(t, { sessao: true, modo: "super" });
+  await abrirCadastroCondominio(page); await page.getByRole("button", { name: "Salvar condomínio" }).click();
+  await visivel(page, "Informe o nome do condomínio."); await visivel(page, "Informe o endereço completo.");
+  assert.equal(cadastrosCondominio(estado).length, 0);
+  await preencherCondominio(page); await page.getByLabel("CEP *", { exact: true }).fill("123");
+  await page.getByRole("button", { name: "Salvar condomínio" }).click(); await visivel(page, "Informe oito dígitos (00000-000).");
+  assert.equal(cadastrosCondominio(estado).length, 0);
+});
+test("P29 201: CEP normalizado, Bearer, três campos, duplo clique bloqueado e catálogo atualizado por busca", async t => {
+  const { page, estado } = await preparar(t, { sessao: true, modo: "super", atrasoCondominio: 300 });
+  await abrirCadastroCondominio(page); await preencherCondominio(page);
+  await page.getByRole("button", { name: "Salvar condomínio" }).dblclick();
+  await visivel(page, "Condomínio cadastrado: Novo Residencial");
+  await page.getByRole("article", { name: "Condomínio Novo Residencial", exact: true }).waitFor();
+  const posts = cadastrosCondominio(estado); assert.equal(posts.length, 1);
+  assert.deepEqual(posts[0].body, { nome_residencial: "Novo Residencial", cep: "72000000", endereco: "Rua Fictícia, 1" });
+  assert.ok(posts[0].bearer.startsWith("Bearer "));
+  assert.equal(JSON.parse(Buffer.from(posts[0].bearer.split(".")[1], "base64url").toString()).sub, id);
+  assert.equal(new URL(page.url()).searchParams.get("busca"), "Novo Residencial");
+  await page.getByRole("button", { name: "Cadastrar condomínio", exact: true }).click(); assert.equal(await page.getByLabel("CEP *", { exact: true }).inputValue(), "");
+});
+test("P29 400 preserva entradas e mostra erro do backend junto ao campo", async t => {
+  const { page } = await preparar(t, { sessao: true, modo: "super", erroCondominio: { status: 400, codigo: "VALIDATION_ERROR", detalhes: { fieldErrors: { cep: ["CEP inválido do servidor"] } } } });
+  await abrirCadastroCondominio(page); await preencherCondominio(page); await page.getByRole("button", { name: "Salvar condomínio" }).click();
+  await visivel(page, "CEP inválido do servidor"); assert.equal(await page.getByLabel("CEP *", { exact: true }).inputValue(), "72000-000");
+});
+test("P29 403 revalida permissões e retira cadastro de quem perdeu papel super", async t => {
+  const { page } = await preparar(t, { sessao: true, modo: "super", erroCondominio: { status: 403, codigo: "FORBIDDEN" } });
+  await abrirCadastroCondominio(page); await preencherCondominio(page); await page.getByRole("button", { name: "Salvar condomínio" }).click();
+  await caminho(page, "/admin"); assert.equal(await page.getByRole("button", { name: "Cadastrar condomínio" }).count(), 0);
+});
+test("P29 resposta perdida não repete POST e permite conferir condomínio já criado", async t => {
+  const { page, estado } = await preparar(t, { sessao: true, modo: "super", perderRespostaCondominio: true });
+  await abrirCadastroCondominio(page); await preencherCondominio(page); await page.getByRole("button", { name: "Salvar condomínio" }).click();
+  await visivel(page, "Não foi possível confirmar o cadastro. O condomínio pode ter sido criado. Consulte o catálogo antes de enviar novamente.");
+  assert.equal(await page.getByRole("button", { name: "Salvar condomínio" }).isDisabled(), true);
+  await page.getByRole("link", { name: "Conferir cadastro no catálogo" }).click();
+  await page.getByRole("article", { name: "Condomínio Novo Residencial", exact: true }).waitFor(); assert.equal(cadastrosCondominio(estado).length, 1);
+});
+test("P29 catálogo: erro/retry, vazio, paginação e filtros sobrevivem refresh", async t => {
+  const { page, estado } = await preparar(t, { sessao: true, modo: "super", erroCatalogo: true });
+  await page.goto(`${origem}/admin/condominios`); await page.getByRole("alert").filter({ hasText: "Não foi possível consultar o catálogo ativo." }).waitFor();
+  estado.erroCatalogo = false; await page.getByRole("button", { name: "Tentar novamente", exact: true }).click();
+  await page.getByRole("article", { name: "Condomínio Residencial Exemplo", exact: true }).waitFor();
+  await page.getByRole("button", { name: "Próxima", exact: true }).click(); await page.waitForURL(url => url.pathname === "/admin/condominios" && url.searchParams.get("pagina") === "2");
+  await page.reload(); await visivel(page, "Página 2 de 2");
+  await page.getByLabel("Buscar condomínio", { exact: true }).fill("Ausente"); await page.getByRole("button", { name: "Buscar", exact: true }).click();
+  await visivel(page, "Nenhum condomínio encontrado nesta consulta."); assert.equal(new URL(page.url()).searchParams.has("pagina"), false);
+});
+for (const largura of [360, 390, 768, 1280]) test(`P29 formulário responsivo ${largura}px, labels, foco e títulos longos`, async t => {
+  const { page } = await preparar(t, { sessao: true, modo: "super", catalogoCondominios: [{ ...condominio, nome_residencial: "x".repeat(160), endereco: "x".repeat(255) }] });
+  await page.setViewportSize({ width: largura, height: 844 }); await abrirCadastroCondominio(page); await preencherCondominio(page);
+  await page.getByLabel("CEP *", { exact: true }).focus(); assert.equal(await page.getByLabel("CEP *", { exact: true }).evaluate(el => el === document.activeElement), true);
+  assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
+  if (largura === 390) await page.screenshot({ path: "/tmp/porta-p29-condominios.png", fullPage: true });
 });

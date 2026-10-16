@@ -15,6 +15,16 @@ import { arquivoImagemProdutoSchema, diferencaProduto, formularioProdutoSchema, 
 import { transferenciaSchema } from "../src/features/vinculos/vinculo.schema";
 import { alterarAdminSchema, alterarContaSchema, lerFiltrosAdministracao } from "../src/features/administracao/administracao.schema";
 import { podeAdministrar, podeAlterarAdmin } from "../src/features/administracao/administracao.regras";
+import { criarCondominioSchema } from "../src/features/condominios/condominio.schema";
+
+test("cadastro condomínio valida limites, trim e CEP mascarado; rejeita autoridade extra", () => {
+  const dados = { nome_residencial: " Residencial Exemplo ", cep: "72000-000", endereco: " Rua Exemplo, 1 " };
+  assert.deepEqual(criarCondominioSchema.parse(dados), { nome_residencial: "Residencial Exemplo", cep: "72000000", endereco: "Rua Exemplo, 1" });
+  assert.equal(criarCondominioSchema.safeParse({ nome_residencial: "x".repeat(160), cep: "00000000", endereco: "x".repeat(255) }).success, true);
+  for (const alteracao of [{ nome_residencial: " " }, { nome_residencial: "x".repeat(161) }, { endereco: " " }, { endereco: "x".repeat(256) }, { cep: "7200000" }, { cep: "abcdefgh" }, { cep: "72000--000" }, { ativo: true }, { admin_condominio: true }, { id_condominio: "forjado" }]) {
+    assert.equal(criarCondominioSchema.safeParse({ ...dados, ...alteracao }).success, false);
+  }
+});
 
 const sessao: SessaoApi = { access_token: "original", user: { id: "pessoa" } };
 const vinculo: Vinculo = { id_vinculo: "vinculo", status_vinculo: "ATIVO", moradia: "Apto 302", admin_condominio: false,

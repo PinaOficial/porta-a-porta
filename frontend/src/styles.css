@@ -187,6 +187,8 @@ summary { cursor: pointer; font-weight: 650; min-height: 30px; padding: 6px 0; }
 @media (min-width: 640px) { .filtros-pedidos { display: grid; grid-template-columns: 1fr 1fr; align-items: center; gap: 20px; } .filtros-pedidos .campo { margin: 0; } .painel-mensagens, .compositor-chat { padding: 28px; } .mensagem { max-width: 80%; } }
 
 .perfil, .administracao { max-width: 960px; margin-inline: auto; }
+.condominios-admin > .card { margin-block: 24px; }
+.condominios-admin h3, .condominios-admin p { overflow-wrap: anywhere; }
 .perfil > .card { margin-block: 24px; }
 .perfil h2, .vinculo-admin h2 { margin-top: 0; overflow-wrap: anywhere; }
 .residencia .detalhes > div { margin-top: 14px; }

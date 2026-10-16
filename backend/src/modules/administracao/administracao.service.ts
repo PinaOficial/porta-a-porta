@@ -6,6 +6,25 @@ import { obterEscopoAdministrativo, revalidarAdminAtivo, validarCondominioAdmini
 import { buscarAdminVinculoAposAlteracao, atualizarAdminVinculo, bloquearAdministracaoCondominios, bloquearVinculoParaAdministracao, buscarVinculoParaAnalise, listarVinculosAdministrativos } from "../vinculos/vinculo.repository.js";
 import type { AtualizarAdminVinculoBody, ListarVinculosQuery } from "./administracao.schema.js";
 import type { ListaVinculosAdministrativos, ResultadoAdminVinculo } from "./administracao.model.js";
+import { criarCondominio } from "../condominios/condominio.repository.js";
+import type { CriarCondominioBody } from "../condominios/condominio.schema.js";
+import type { ResultadoCriacaoCondominio } from "../condominios/condominio.model.js";
+
+export async function cadastrarCondominioAdmin(
+  auth: ContextoAutenticado | undefined, dados: CriarCondominioBody,
+): Promise<ResultadoCriacaoCondominio> {
+  if (!auth) throw new ErroDominio("UNAUTHENTICATED", 401, "Autenticação necessária.");
+  if (auth.super_admin !== true) throw new ErroDominio("FORBIDDEN", 403, "Acesso de super admin necessário.");
+  return prisma.$transaction(async (tx) => {
+    const condominio = await criarCondominio(tx, dados);
+    await criarAuditoria(tx, {
+      id_ator: auth.id_usuario, acao: "CREATE_CONDOMINIUM", entidade: "condominio",
+      entidade_id: condominio.id_condominio, id_condominio: condominio.id_condominio,
+      metadata: { ativo: condominio.ativo },
+    });
+    return { dados: { ...condominio, created_at: condominio.created_at.toISOString() } };
+  }, { isolationLevel: "ReadCommitted" });
+}
 
 export async function listarVinculosAdmin(auth: ContextoAutenticado | undefined, filtros: ListarVinculosQuery): Promise<ListaVinculosAdministrativos> {
   const escopo = obterEscopoAdministrativo(auth);

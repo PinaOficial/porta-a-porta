@@ -19,6 +19,8 @@
     "test:status-produto": "tsc -p tsconfig.test.json && node --import tsx tests/status-produto.test.ts",
     "test:status-produto:integration": "tsc -p tsconfig.test.json && node --import tsx tests/status-produto.integration.test.ts",
     "test:condominios": "tsc -p tsconfig.test.json && node --import tsx tests/condominio.test.ts",
+    "test:criar-condominio": "tsc -p tsconfig.test.json && node --import tsx tests/criar-condominio.test.ts",
+    "test:criar-condominio:integration": "tsc -p tsconfig.test.json && node --import tsx tests/criar-condominio.integration.test.ts",
     "test:onboarding": "tsc -p tsconfig.test.json && node --import tsx tests/onboarding.test.ts",
     "test:onboarding:integration": "tsc -p tsconfig.test.json && node --import tsx tests/onboarding.integration.test.ts",
     "test:vinculos": "tsc -p tsconfig.test.json && node --import tsx tests/vinculo.test.ts",

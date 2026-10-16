@@ -113,6 +113,43 @@ test("MVP integrado: A–F, I, J e K atravessam navegador, API e PostgreSQL", { 
   async function erro(conta, caminho, status, codigo, method, json) {
     const resposta = await api(conta, caminho, method, json); assert.equal(resposta.status, status); assert.equal((await resposta.json()).erro, codigo);
   }
+  // Prompt 29: novo condomínio, primeira residência e promoção pelo fluxo real.
+  const cadastroPage = await pagina(superAdmin);
+  await cadastroPage.getByRole("link", { name: "Consultar e cadastrar condomínios" }).click();
+  await cadastroPage.reload();
+  await cadastroPage.getByRole("button", { name: "Cadastrar condomínio", exact: true }).click();
+  const nomeNovo = `Novo integrado ${tag}`;
+  await cadastroPage.getByLabel("Nome do condomínio/residencial *", { exact: true }).fill(nomeNovo);
+  await cadastroPage.getByLabel("CEP *", { exact: true }).fill("72000-000");
+  await cadastroPage.getByLabel("Endereço completo *", { exact: true }).fill("Rua Fictícia, 29");
+  await cadastroPage.getByRole("button", { name: "Salvar condomínio", exact: true }).click();
+  await cadastroPage.getByText(`Condomínio cadastrado: ${nomeNovo}`, { exact: true }).waitFor();
+  await cadastroPage.getByRole("article", { name: `Condomínio ${nomeNovo}`, exact: true }).waitFor();
+  const novo = await prisma.condominio.findFirstOrThrow({ where: { nome_residencial: nomeNovo } });
+  assert.equal(novo.cep, "72000000"); assert.equal(novo.ativo, true);
+  assert.equal(await prisma.auditoria.count({ where: { acao: "CREATE_CONDOMINIUM", id_condominio: novo.id_condominio, id_ator: superAdmin.id } }), 1);
+  assert.equal(await prisma.vinculo_condominio.count({ where: { id_condominio: novo.id_condominio } }), 0);
+  const primeiro = await pessoa(`Primeiro morador ${tag}`), primeiroPage = await pagina(primeiro);
+  await primeiroPage.getByLabel("Buscar condomínio").fill(nomeNovo);
+  await primeiroPage.getByRole("radio", { name: new RegExp(nomeNovo) }).check();
+  await primeiroPage.getByLabel("Nome completo").fill(primeiro.nome);
+  await primeiroPage.getByLabel("CPF", { exact: true }).fill(String(randomInt(0, 100_000_000_000)).padStart(11, "0"));
+  await primeiroPage.getByLabel("Data de nascimento").fill("2000-01-01");
+  await primeiroPage.getByLabel("Sua moradia").fill("Apto 29");
+  await primeiroPage.getByRole("button", { name: "Solicitar acesso ao condomínio", exact: true }).click();
+  await primeiroPage.waitForURL("**/aguardando-aprovacao");
+  const primeiroVinculo = await prisma.vinculo_condominio.findFirstOrThrow({ where: { id_condomino: primeiro.id } });
+  assert.equal(primeiroVinculo.admin_condominio, false);
+  await cadastroPage.goto(`${origem}/admin/vinculos/pendentes?busca=${encodeURIComponent(primeiro.nome)}`);
+  cadastroPage.once("dialog", d => d.accept()); await cadastroPage.getByRole("button", { name: "Aprovar", exact: true }).click();
+  await cadastroPage.getByRole("button", { name: "Aprovar", exact: true }).waitFor({ state: "detached" });
+  assert.equal((await prisma.vinculo_condominio.findUniqueOrThrow({ where: { id_vinculo: primeiroVinculo.id_vinculo } })).admin_condominio, false);
+  assert.equal((await api(superAdmin, `/admin/vinculos/${primeiroVinculo.id_vinculo}/admin`, "PATCH", { admin_condominio: true })).status, 200);
+  await primeiroPage.getByRole("button", { name: "Atualizar status", exact: true }).click(); await primeiroPage.waitForURL("**/vitrine");
+  await primeiroPage.goto(`${origem}/admin/condominios`); await primeiroPage.waitForURL("**/admin");
+  assert.equal(await primeiroPage.getByRole("link", { name: "Consultar e cadastrar condomínios" }).count(), 0);
+  await erro(primeiro, "/admin/condominios", 403, "FORBIDDEN", "POST", { nome_residencial: "Proibido", cep: "72000000", endereco: "Rua Fictícia" });
+  t.diagnostic("P29: cadastro React/Express/PG + auditoria → catálogo/onboarding → primeiro aprovado sem admin prévio → promoção explícita → local recebe 403 e guard.");
   const compraPage = await pagina(comprador), vendaPage = await pagina(vendedor), adminPage = await pagina(adminX);
   await compraPage.getByLabel("Nome completo").fill(comprador.nome); await compraPage.getByLabel("CPF", { exact: true }).fill(String(randomInt(0, 100_000_000_000)).padStart(11, "0"));
   await compraPage.getByLabel("Data de nascimento").fill("2000-01-01"); await compraPage.getByLabel("Buscar condomínio").fill(`MVP X ${tag}`);

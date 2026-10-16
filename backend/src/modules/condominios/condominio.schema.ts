@@ -13,3 +13,10 @@ export const listarCondominiosQuerySchema = z.strictObject({
 });
 
 export type ListarCondominiosQuery = z.infer<typeof listarCondominiosQuerySchema>;
+
+export const criarCondominioBodySchema = z.strictObject({
+  nome_residencial: z.string().trim().min(1).max(160),
+  cep: z.string().regex(/^[0-9]{8}$/, "Informe o CEP com oito dígitos."),
+  endereco: z.string().trim().min(1).max(255),
+});
+export type CriarCondominioBody = z.infer<typeof criarCondominioBodySchema>;
