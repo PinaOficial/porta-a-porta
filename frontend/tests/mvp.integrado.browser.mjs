@@ -43,7 +43,7 @@ test("MVP integrado: A–F, I, J e K atravessam navegador, API e PostgreSQL", { 
   });
   await new Promise(resolve => servidor.listen(0, "127.0.0.1", resolve));
   const base = `http://127.0.0.1:${servidor.address().port}`;
-  browser = await chromium.launch({ headless: true });
+  browser = await chromium.launch({ headless: true, ...(process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE ? { executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE } : {}) });
   const condominioX = randomUUID(), condominioY = randomUUID(), categoria = randomUUID();
   const tag = randomUUID().slice(0, 8);
   await prisma.condominio.createMany({ data: [
@@ -150,6 +150,38 @@ test("MVP integrado: A–F, I, J e K atravessam navegador, API e PostgreSQL", { 
   assert.equal(await primeiroPage.getByRole("link", { name: "Consultar e cadastrar condomínios" }).count(), 0);
   await erro(primeiro, "/admin/condominios", 403, "FORBIDDEN", "POST", { nome_residencial: "Proibido", cep: "72000000", endereco: "Rua Fictícia" });
   t.diagnostic("P29: cadastro React/Express/PG + auditoria → catálogo/onboarding → primeiro aprovado sem admin prévio → promoção explícita → local recebe 403 e guard.");
+  // Prompt 30: edição, conflito, desativação ocupada e reativação pelo client real.
+  await cadastroPage.goto(`${origem}/admin/condominios?busca=${encodeURIComponent(nomeNovo)}&ativo=true`);
+  await cadastroPage.getByRole("button", { name: "Editar condomínio", exact: true }).click();
+  await cadastroPage.getByLabel("Endereço completo *", { exact: true }).fill("Endereço revisado P30");
+  const observado = (await (await api(superAdmin, `/admin/condominios/${novo.id_condominio}`)).json()).dados;
+  assert.equal((await api(superAdmin, `/admin/condominios/${novo.id_condominio}`, "PATCH", { versao: observado.versao, cep: "71000000" })).status, 200);
+  await cadastroPage.getByRole("button", { name: "Salvar alterações", exact: true }).click();
+  await cadastroPage.getByRole("alert").filter({ hasText: "Os dados foram alterados" }).waitFor();
+  assert.equal(await cadastroPage.getByLabel("Endereço completo *", { exact: true }).inputValue(), "Endereço revisado P30");
+  await cadastroPage.getByRole("button", { name: "Recarregar dados do condomínio", exact: true }).click();
+  await cadastroPage.waitForFunction(() => !document.querySelector("dialog fieldset")?.disabled);
+  assert.equal(await cadastroPage.getByLabel("CEP *", { exact: true }).inputValue(), "71000000");
+  await cadastroPage.getByLabel("Endereço completo *", { exact: true }).fill("Endereço revisado P30");
+  await cadastroPage.getByRole("button", { name: "Salvar alterações", exact: true }).click();
+  await cadastroPage.getByRole("dialog").waitFor({ state: "detached" });
+  assert.equal((await prisma.condominio.findUniqueOrThrow({ where: { id_condominio: novo.id_condominio } })).endereco, "Endereço revisado P30");
+  await cadastroPage.getByRole("button", { name: "Desativar condomínio", exact: true }).click();
+  await cadastroPage.getByLabel("Motivo da alteração *", { exact: true }).fill("Pausa de novas entradas P30");
+  await cadastroPage.getByRole("button", { name: "Confirmar desativação", exact: true }).click();
+  await cadastroPage.getByText("Nenhum condomínio encontrado nesta consulta.", { exact: true }).waitFor();
+  const registroAuditoria = await prisma.auditoria.findFirstOrThrow({ where: { entidade_id: novo.id_condominio, acao: "DEACTIVATE_CONDOMINIUM" } });
+  assert.deepEqual(registroAuditoria.metadata, { antes: { ativo: true }, depois: { ativo: false }, motivo: "Pausa de novas entradas P30" });
+  assert.equal((await prisma.vinculo_condominio.findUniqueOrThrow({ where: { id_vinculo: primeiroVinculo.id_vinculo } })).status_vinculo, "ATIVO");
+  await primeiroPage.goto(`${origem}/vitrine`); await primeiroPage.getByRole("heading", { name: "Encontre pertinho de você", exact: true }).waitFor();
+  await cadastroPage.getByLabel("Estado do condomínio", { exact: true }).selectOption("false");
+  await cadastroPage.getByRole("button", { name: "Reativar condomínio", exact: true }).click();
+  await cadastroPage.getByLabel("Motivo da alteração *", { exact: true }).fill("Reabertura P30");
+  await cadastroPage.getByRole("button", { name: "Confirmar reativação", exact: true }).click();
+  await cadastroPage.getByRole("dialog").waitFor({ state: "detached" });
+  assert.equal((await prisma.condominio.findUniqueOrThrow({ where: { id_condominio: novo.id_condominio } })).ativo, true);
+  assert.equal((await prisma.vinculo_condominio.findUniqueOrThrow({ where: { id_vinculo: primeiroVinculo.id_vinculo } })).admin_condominio, true);
+  t.diagnostic("P30: conflito real preserva rascunho; recarga/edição, desativação com auditoria e reativação preservam morador/admin ocupado e vitrine.");
   const compraPage = await pagina(comprador), vendaPage = await pagina(vendedor), adminPage = await pagina(adminX);
   await compraPage.getByLabel("Nome completo").fill(comprador.nome); await compraPage.getByLabel("CPF", { exact: true }).fill(String(randomInt(0, 100_000_000_000)).padStart(11, "0"));
   await compraPage.getByLabel("Data de nascimento").fill("2000-01-01"); await compraPage.getByLabel("Buscar condomínio").fill(`MVP X ${tag}`);

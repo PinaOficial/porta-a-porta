@@ -7,3 +7,6 @@ export const criarCondominioSchema = z.strictObject({
   endereco: z.string().trim().min(1, "Informe o endereço completo.").max(255, "Use até 255 caracteres."),
 });
 export type CriarCondominio = z.output<typeof criarCondominioSchema>;
+export const statusCondominioSchema = z.strictObject({
+  motivo: z.string().trim().min(1, "Informe o motivo.").max(255, "Use até 255 caracteres."),
+});

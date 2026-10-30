@@ -5,3 +5,4 @@ export interface Condominio {
   endereco: string;
 }
 export interface CondominioCriado extends Condominio { ativo: boolean; created_at: string }
+export interface CondominioAdmin extends CondominioCriado { versao: string }

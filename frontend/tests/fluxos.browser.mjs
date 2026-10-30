@@ -1,8 +1,10 @@
 // Executar com Vite e variáveis fictícias descritas em docs/FRONTEND_INFRA.md.
 import { test, after } from "node:test";
 import assert from "node:assert/strict";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 const { chromium } = await import(process.env.PLAYWRIGHT_MODULE || "playwright");
-const browser = await chromium.launch({ headless: true });
+const browser = await chromium.launch({ headless: true, ...(process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE ? { executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE } : {}) });
 after(() => browser.close());
 const origem = process.env.FRONTEND_TEST_URL || "http://127.0.0.1:5174";
 const id = "12345678-1234-4234-8234-123456789012";
@@ -82,6 +84,22 @@ async function preparar(t, opcoes = {}) {
       estado.catalogoCondominios = [dados];
       if (estado.perderRespostaCondominio) return route.abort("failed");
       return route.fulfill({ status: 201, json: { dados }, headers });
+    }
+    const condominioMatch = url.pathname.match(/^\/api\/admin\/condominios\/([^/]+)(\/status)?$/);
+    if (condominioMatch) {
+      estado.catalogoCondominios ??= [structuredClone(condominio)];
+      const item = estado.catalogoCondominios.find(c => c.id_condominio === condominioMatch[1]);
+      if (!item) return route.fulfill({ status: 404, json: { erro: "CONDOMINIO_NOT_FOUND" }, headers });
+      item.ativo ??= true; item.created_at ??= "2026-10-16T20:00:00.000Z"; item.versao ??= "a".repeat(64);
+      if (req.method() === "PATCH") {
+        if (estado.atrasoGestaoCondominio) await new Promise(resolve => setTimeout(resolve, estado.atrasoGestaoCondominio));
+        if (estado.erroGestaoCondominio) return falhar(estado.erroGestaoCondominio);
+        const { versao, motivo, ...dados } = req.postDataJSON();
+        if (versao !== item.versao) return falhar({ status: 409, codigo: "CONDOMINIUM_UPDATE_CONFLICT" });
+        Object.assign(item, dados, { versao: "b".repeat(64) });
+        if (estado.perderRespostaGestao) return route.abort("failed");
+      }
+      return route.fulfill({ json: { dados: item }, headers });
     }
     if (url.pathname === "/api/vinculos/transferencia") {
       if (estado.atrasoTransferencia) await new Promise(resolve => setTimeout(resolve, estado.atrasoTransferencia));
@@ -261,7 +279,9 @@ async function preparar(t, opcoes = {}) {
     }
     if (url.pathname.endsWith("/condominios")) {
       if (estado.erroCatalogo) return falhar({ status: 500, codigo: "INTERNAL_ERROR" });
-      return route.fulfill({ json: { dados: url.searchParams.get("busca") === "Ausente" ? [] : (estado.catalogoCondominios ?? [condominio]), paginacao: { pagina: Number(url.searchParams.get("pagina")), limite: 20, total: 21, total_paginas: 2 } }, headers });
+      const itens = (estado.catalogoCondominios ?? [condominio]).map(c => ({ ...c, ativo: c.ativo ?? true, created_at: c.created_at ?? "2026-10-16T20:00:00.000Z", versao: c.versao ?? "a".repeat(64) }));
+      const dados = url.searchParams.get("busca") === "Ausente" ? [] : itens.filter(c => !url.searchParams.has("ativo") || c.ativo === (url.searchParams.get("ativo") === "true"));
+      return route.fulfill({ json: { dados, paginacao: { pagina: Number(url.searchParams.get("pagina")), limite: 20, total: dados.length ? 21 : 0, total_paginas: dados.length ? 2 : 0 } }, headers });
     }
     if (url.pathname.endsWith("/onboarding")) {
       if (estado.erroPost) return route.fulfill({ status: estado.erroPost.status, json: estado.erroPost.json, headers });
@@ -289,7 +309,7 @@ async function preencherOnboarding(page) {
 test("sem sessão: guarda de rota protegida leva ao Login", async t => {
   const { page } = await preparar(t);
   await page.goto(`${origem}/vitrine`); await caminho(page, "/login"); await visivel(page, "Bom ter você por aqui");
-  await page.screenshot({ path: "/tmp/porta-frontend-login-mobile.png", fullPage: true });
+  await page.screenshot({ path: join(tmpdir(), "porta-frontend-login-mobile.png"), fullPage: true });
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
 });
 test("login válido sem onboarding carrega formulário com Bearer nas duas leituras", async t => {
@@ -309,7 +329,7 @@ for (const confirmar of [true, false]) test(`cadastro trata sessão imediata ou 
 test("onboarding envia body estrito, aguarda, restaura após refresh e detecta aprovação", async t => {
   const { page, estado } = await preparar(t, { sessao: true, modo: "novo" });
   await page.goto(origem); await caminho(page, "/onboarding"); await preencherOnboarding(page);
-  await page.screenshot({ path: "/tmp/porta-frontend-onboarding-mobile.png", fullPage: true });
+  await page.screenshot({ path: join(tmpdir(), "porta-frontend-onboarding-mobile.png"), fullPage: true });
   await page.getByRole("button", { name: "Solicitar acesso ao condomínio" }).click();
   await caminho(page, "/aguardando-aprovacao"); await visivel(page, "Residencial Destino");
   assert.deepEqual(estado.chamadas.find(c => c.metodo === "POST").body, { nome_completo: "Maria Exemplo", cpf: "00000000000", data_nascimento: "2000-01-01", id_condominio: condominio.id_condominio, moradia: "Apto 302" });
@@ -341,7 +361,7 @@ test("ativo restaura sem flash, transferência não bloqueia e admin local tem p
   assert.ok(await page.getByRole("status").filter({ hasText: "Mudança de condomínio" }).isVisible());
   assert.equal(await page.evaluate(() => window.loginPiscou), false);
   assert.equal(await page.getByRole("link", { name: "Pedidos", exact: true }).getAttribute("href"), "/pedidos");
-  await page.setViewportSize({ width: 1280, height: 900 }); await page.screenshot({ path: "/tmp/porta-frontend-shell-desktop.png", fullPage: true });
+  await page.setViewportSize({ width: 1280, height: 900 }); await page.screenshot({ path: join(tmpdir(), "porta-frontend-shell-desktop.png"), fullPage: true });
 });
 for (const modo of ["SUSPENSO", "REJEITADO", "ENCERRADO"]) test(`histórico ${modo} mostra vínculo sem reenviar residência`, async t => {
   const { page } = await preparar(t, { sessao: true, modo });
@@ -421,8 +441,8 @@ test("vitrine ativa mostra categorias, dados paginados e card sem imagem", async
   assert.ok(await page.getByText("R$ 25,90", { exact: true }).isVisible());
   assert.ok(estado.chamadas.some(c => c.caminho === "/api/categorias"));
   assert.ok(estado.chamadas.filter(c => c.caminho === "/api/produtos").every(c => c.query === "pagina=1&limite=20" && c.bearer?.startsWith("Bearer ")));
-  await page.screenshot({ path: "/tmp/porta-vitrine-mobile.png", fullPage: true });
-  await page.setViewportSize({ width: 1280, height: 900 }); await page.screenshot({ path: "/tmp/porta-vitrine-desktop.png", fullPage: true });
+  await page.screenshot({ path: join(tmpdir(), "porta-vitrine-mobile.png"), fullPage: true });
+  await page.setViewportSize({ width: 1280, height: 900 }); await page.screenshot({ path: join(tmpdir(), "porta-vitrine-desktop.png"), fullPage: true });
 });
 test("paginação, busca e categoria mudam URL; refresh e back/forward preservam os filtros", async t => {
   const { page, estado } = await preparar(t, { sessao: true });
@@ -485,7 +505,7 @@ test("detalhe direto e refresh não varrem vitrine; galeria permite escolher ima
   await page.reload(); await page.getByRole("heading", { name: "Bolo de cenoura", exact: true }).waitFor();
   assert.equal(estado.chamadas.some(c => c.caminho === "/api/produtos"), false);
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
-  await page.screenshot({ path: "/tmp/porta-produto-mobile.png", fullPage: true });
+  await page.screenshot({ path: join(tmpdir(), "porta-produto-mobile.png"), fullPage: true });
 });
 test("produto próprio não mostra formulário nem link de gestão inexistente", async t => {
   const produto = structuredClone(produtoBase); produto.vendedor.id_vinculo = vinculo.id_vinculo;
@@ -515,7 +535,7 @@ test("pedido envia três campos, converte timezone, bloqueia duplo clique e conf
   assert.deepEqual(postsPedido(estado).map(c => c.body), [{ id_produto: produtoId, quantidade: 2, hora_combinada: "2099-01-01T22:00:00.000Z" }]);
   await visivel(page, "Bolo confirmado pelo servidor"); assert.ok(await page.getByText("R$ 77,70", { exact: true }).isVisible());
   assert.equal(estado.chamadas.some(c => /^\/api\/pedidos\//.test(c.caminho)), false);
-  await page.screenshot({ path: "/tmp/porta-pedido-confirmado-mobile.png", fullPage: true });
+  await page.screenshot({ path: join(tmpdir(), "porta-pedido-confirmado-mobile.png"), fullPage: true });
 });
 test("estoque concorrente insuficiente refaz detalhe e ajusta quantidade sem repetir pedido", async t => {
   const { page, estado } = await preparar(t, { sessao: true, erroPedido: { status: 409, codigo: "INSUFFICIENT_STOCK" } });
@@ -595,8 +615,8 @@ test("gestão lista ativos/inativos/categoria inativa sem ativo na query e naveg
   await visivel(page, "Anúncio antigo"); await visivel(page, "Categoria inativa. Você pode editar ou desativar este anúncio.");
   await visivel(page, "Ativo"); await visivel(page, "Inativo");
   assert.ok(estado.chamadas.filter(c => c.caminho === "/api/produtos/me").every(c => c.query === "pagina=1&limite=20"));
-  await page.screenshot({ path: "/tmp/porta-meus-produtos-mobile.png", fullPage: true });
-  await page.setViewportSize({ width: 1280, height: 900 }); await page.screenshot({ path: "/tmp/porta-meus-produtos-desktop.png", fullPage: true });
+  await page.screenshot({ path: join(tmpdir(), "porta-meus-produtos-mobile.png"), fullPage: true });
+  await page.setViewportSize({ width: 1280, height: 900 }); await page.screenshot({ path: join(tmpdir(), "porta-meus-produtos-desktop.png"), fullPage: true });
 });
 test("gestão mantém status/busca/categoria/página na URL e em refresh", async t => {
   const { page, estado } = await preparar(t, { sessao: true, produto: proprio(), paginarGestao: true });
@@ -661,7 +681,7 @@ test("categoria atual inativa não some; PATCH altera só nome e preserva imagen
   await visivel(page, "Alterações salvas."); await page.getByRole("button", { name: "Excluir imagem 1", exact: true }).waitFor();
   assert.deepEqual(escritasProduto(estado).map(c => c.body), [{ nome_produto: "Bolo editado" }]);
   await page.waitForFunction(() => document.querySelector(".editor-produto button[type=submit]")?.disabled);
-  await page.screenshot({ path: "/tmp/porta-editor-produto-mobile.png", fullPage: true });
+  await page.screenshot({ path: join(tmpdir(), "porta-editor-produto-mobile.png"), fullPage: true });
 });
 test("troca explícita para categoria ativa envia só categoria e erro CATEGORY_INACTIVE permite corrigir", async t => {
   const { page, estado } = await preparar(t, { sessao: true, produto: proprio({ categoria: { ...produtoBase.categoria, id_categoria: outroId, ativo: false } }), erroEdicao: { status: 409, codigo: "CATEGORY_INACTIVE" } });
@@ -811,8 +831,8 @@ test("pedidos ativos mostram DTO histórico, valor congelado e navegação; conf
   assert.ok(await page.locator(".historico-pedido time").isVisible());
   assert.equal(estado.chamadas.some(c => c.caminho.startsWith("/api/produtos")), false);
   assert.ok(estado.chamadas.filter(c => c.caminho === "/api/pedidos/me").every(c => c.query === "pagina=1&limite=20" && c.bearer.startsWith("Bearer ")));
-  await page.screenshot({ path: "/tmp/porta-pedidos-mobile.png", fullPage: true });
-  await page.setViewportSize({ width: 1280, height: 900 }); await page.screenshot({ path: "/tmp/porta-pedidos-desktop.png", fullPage: true });
+  await page.screenshot({ path: join(tmpdir(), "porta-pedidos-mobile.png"), fullPage: true });
+  await page.setViewportSize({ width: 1280, height: 900 }); await page.screenshot({ path: join(tmpdir(), "porta-pedidos-desktop.png"), fullPage: true });
   await page.goto(`${origem}/produtos/${produtoId}`); await escolherPedido(page); await page.getByRole("button", { name: "Confirmar pedido" }).click();
   await page.getByRole("link", { name: "Ver meus pedidos", exact: true }).click(); await caminho(page, "/pedidos");
 });
@@ -923,8 +943,8 @@ test("envio trim com 201 vai à nova última página e não duplica mensagem rea
   assert.deepEqual(postsMensagem(estado).map(c => c.body), [{ conteudo: "Podemos combinar?" }]);
   const enviada = estado.mensagens.at(-1); assert.equal(await page.locator(`[data-mensagem-id="${enviada.id_mensagem}"]`).count(), 1);
   assert.equal(await page.getByLabel("Mensagem", { exact: true }).inputValue(), "");
-  await page.screenshot({ path: "/tmp/porta-chat-mobile.png", fullPage: true });
-  await page.setViewportSize({ width: 1280, height: 900 }); await page.screenshot({ path: "/tmp/porta-chat-desktop.png", fullPage: true });
+  await page.screenshot({ path: join(tmpdir(), "porta-chat-mobile.png"), fullPage: true });
+  await page.setViewportSize({ width: 1280, height: 900 }); await page.screenshot({ path: join(tmpdir(), "porta-chat-desktop.png"), fullPage: true });
 });
 test("chat vazio e texto em branco não enviam; texto é renderizado sem HTML", async t => {
   const { page, estado } = await preparar(t, { sessao: true, mensagens: [] });
@@ -1032,7 +1052,7 @@ test("perfil ativo mostra identidade própria, sessão e residência após refre
   assert.equal(await page.getByLabel("CPF", { exact: true }).count(), 0);
   await page.reload(); await visivel(page, "Meu Perfil");
   assert.equal(estado.chamadas.some(c => c.caminho.endsWith("/usuarios/me") && c.query), false);
-  await page.screenshot({ path: "/tmp/porta-prompt27-perfil-mobile.png", fullPage: true });
+  await page.screenshot({ path: join(tmpdir(), "porta-prompt27-perfil-mobile.png"), fullPage: true });
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
 });
 for (const modo of ["SUSPENSO", "REJEITADO", "ENCERRADO"]) test(`perfil ${modo} mostra último vínculo, sem privilégio histórico e com pedidos`, async t => {
@@ -1173,7 +1193,7 @@ test("super executa ações globais por usuário, compartilha resultado e não i
   await page.getByText("Última alteração confirmada nesta sessão: conta ATIVA.", { exact: true }).first().waitFor();
   assert.deepEqual(patchesAdmin(estado)[1].body, { status_conta: "ATIVA" });
   assert.deepEqual(estado.vinculosAdmin.map(v => v.status_vinculo), ["ATIVO", "ENCERRADO"]);
-  await page.setViewportSize({ width: 1280, height: 900 }); await page.screenshot({ path: "/tmp/porta-prompt27-admin-desktop.png", fullPage: true });
+  await page.setViewportSize({ width: 1280, height: 900 }); await page.screenshot({ path: join(tmpdir(), "porta-prompt27-admin-desktop.png"), fullPage: true });
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
 });
 for (const origemFalha of ["leitura", "ação"]) test(`403 na ${origemFalha} remove área privada e refaz privilégios`, async t => {
@@ -1238,7 +1258,7 @@ test("admin diferencia falha de leitura, retry e busca sem resultado com Bearer"
   await page.goto(`${origem}/admin/vinculos`); await page.getByRole("alert").filter({ hasText: "Não foi possível carregar" }).waitFor();
   assert.equal(await page.locator(".vinculo-admin").count(), 0);
   estado.erroAdminLista = null; await page.getByRole("button", { name: "Tentar novamente", exact: true }).click(); await visivel(page, "Morador da fila");
-  await page.screenshot({ path: "/tmp/porta-prompt27-admin-mobile.png", fullPage: true });
+  await page.screenshot({ path: join(tmpdir(), "porta-prompt27-admin-mobile.png"), fullPage: true });
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
   await page.getByLabel("Buscar por nome ou moradia").fill("Ninguém"); await page.getByRole("button", { name: "Buscar", exact: true }).click(); await visivel(page, "Nenhum vínculo para estes filtros");
   assert.ok(estado.chamadas.filter(c => c.caminho.startsWith("/api/admin/")).every(c => c.bearer?.startsWith("Bearer ")));
@@ -1275,7 +1295,7 @@ test("as cinco rotas de Perfil e administração restauram após refresh direto"
     assert.equal(new URL(page.url()).pathname, rota); assert.equal(await page.evaluate(() => window.loginPiscou), false);
   }
   await page.goto(`${origem}/perfil/transferencia`); await page.getByRole("radio", { name: /Residencial Novo/ }).waitFor();
-  await page.screenshot({ path: "/tmp/porta-prompt27-transferencia-mobile.png", fullPage: true });
+  await page.screenshot({ path: join(tmpdir(), "porta-prompt27-transferencia-mobile.png"), fullPage: true });
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
 });
 
@@ -1316,7 +1336,7 @@ test("conflito de onboarding da sessão anterior não apaga estado da próxima p
 test("detalhe não transborda com nome válido de 140 caracteres sem espaços", async t => {
   const { page } = await preparar(t, { sessao: true, produto: { ...structuredClone(produtoBase), nome_produto: "P".repeat(140) } });
   await page.setViewportSize({ width: 360, height: 800 }); await page.goto(`${origem}/produtos/${produtoId}`); await page.getByRole("heading", { name: "P".repeat(140), exact: true }).waitFor();
-  await page.screenshot({ path: "/tmp/porta-mvp28-nome-longo.png", fullPage: true });
+  await page.screenshot({ path: join(tmpdir(), "porta-mvp28-nome-longo.png"), fullPage: true });
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
 });
 for (const tamanho of [{ width: 360, height: 800 }, { width: 390, height: 844 }, { width: 768, height: 1024 }, { width: 1280, height: 800 }]) test(`auditoria visual e semântica das telas em ${tamanho.width}x${tamanho.height}`, async t => {
@@ -1336,7 +1356,7 @@ for (const tamanho of [{ width: 360, height: 800 }, { width: 390, height: 844 },
       idsDuplicados: [...document.querySelectorAll("[id]")].length !== new Set([...document.querySelectorAll("[id]")].map(el => el.id)).size,
     }));
     assert.deepEqual(semantica, { largura: true, principais: 1, titulos: 1, semLabel: 0, semAlt: 0, idsDuplicados: false }, `${tamanho.width}: ${rota}`);
-    if (["/vitrine", `/produtos/${produtoId}`, "/perfil", "/admin/vinculos"].includes(rota)) await page.screenshot({ path: `/tmp/porta-mvp28-${tamanho.width}-${rota === "/vitrine" ? "vitrine" : rota.startsWith("/produtos/") ? "produto" : rota === "/perfil" ? "perfil" : "admin"}.png`, fullPage: true });
+    if (["/vitrine", `/produtos/${produtoId}`, "/perfil", "/admin/vinculos"].includes(rota)) await page.screenshot({ path: `${tmpdir()}/porta-mvp28-${tamanho.width}-${rota === "/vitrine" ? "vitrine" : rota.startsWith("/produtos/") ? "produto" : rota === "/perfil" ? "perfil" : "admin"}.png`, fullPage: true });
   }
   await page.goto(`${origem}/perfil`); await page.getByRole("link", { name: "Perfil", exact: true }).waitFor();
   await page.getByRole("link", { name: "Vitrine", exact: true }).focus(); assert.equal(await page.evaluate(() => document.activeElement?.getAttribute("href")), "/vitrine");
@@ -1354,6 +1374,71 @@ for (const [codigo, mensagem] of [["invalid_credentials", "E-mail ou senha incor
 
 // Prompt 29: contratos de domínio simulados; SDK Auth e client de produção reais.
 const cadastrosCondominio = estado => estado.chamadas.filter(c => c.caminho === "/api/admin/condominios" && c.metodo === "POST");
+const alteracoesCondominio = estado => estado.chamadas.filter(c => c.caminho.startsWith("/api/admin/condominios/") && c.metodo === "PATCH");
+test("P30 filtros incluem inativos e preservam estado na URL e no refresh", async t => {
+  const { page, estado } = await preparar(t, { sessao: true, modo: "super", catalogoCondominios: [{ ...condominio, ativo: true }, { ...destinoCondominio, ativo: false }] });
+  await page.goto(`${origem}/admin/condominios`); await page.getByRole("article", { name: `Condomínio ${destinoCondominio.nome_residencial}`, exact: true }).waitFor();
+  await page.getByLabel("Estado do condomínio", { exact: true }).selectOption("false");
+  await page.getByRole("article", { name: `Condomínio ${destinoCondominio.nome_residencial}`, exact: true }).waitFor();
+  assert.equal(await page.getByRole("article", { name: `Condomínio ${condominio.nome_residencial}`, exact: true }).count(), 0);
+  await page.reload(); await page.getByRole("button", { name: "Reativar condomínio", exact: true }).waitFor();
+  assert.equal(new URL(page.url()).searchParams.get("ativo"), "false");
+  assert.ok(estado.chamadas.some(c => c.caminho === "/api/admin/condominios" && c.query.includes("ativo=false")));
+});
+test("P30 edição carrega por ID no deep link e envia apenas diferença/versionamento com CEP normalizado", async t => {
+  const { page, estado } = await preparar(t, { sessao: true, modo: "super" });
+  await page.goto(`${origem}/admin/condominios?editar=${condominio.id_condominio}`);
+  await page.getByLabel("CEP *", { exact: true }).fill("12345-678");
+  await page.getByRole("button", { name: "Salvar alterações", exact: true }).click();
+  await page.getByText(`Condomínio ${condominio.nome_residencial} atualizado. Estado: Ativo.`, { exact: true }).waitFor();
+  assert.deepEqual(alteracoesCondominio(estado)[0].body, { cep: "12345678", versao: "a".repeat(64) });
+  assert.equal(await page.getByRole("dialog").count(), 0);
+});
+test("P30 cancelar/Escape não escreve e devolve foco ao controle de origem", async t => {
+  const { page, estado } = await preparar(t, { sessao: true, modo: "super" });
+  await page.goto(`${origem}/admin/condominios`);
+  const botao = page.getByRole("button", { name: "Desativar condomínio", exact: true }); await botao.click();
+  await page.getByRole("dialog").waitFor(); await page.keyboard.press("Escape");
+  assert.equal(await page.getByRole("dialog").count(), 0); assert.equal(await botao.evaluate(e => e === document.activeElement), true); assert.equal(alteracoesCondominio(estado).length, 0);
+});
+test("P30 desativação exige motivo, confirma estado desejado e duplo clique só envia uma vez", async t => {
+  const { page, estado } = await preparar(t, { sessao: true, modo: "super", atrasoGestaoCondominio: 200 });
+  await page.goto(`${origem}/admin/condominios?ativo=true`); await page.getByRole("button", { name: "Desativar condomínio", exact: true }).click();
+  const confirmar = page.getByRole("button", { name: "Confirmar desativação", exact: true }); await confirmar.click(); await visivel(page, "Informe o motivo.");
+  assert.equal(alteracoesCondominio(estado).length, 0);
+  await page.getByLabel("Motivo da alteração *", { exact: true }).fill(" Encerramento de novas entradas "); await confirmar.dblclick();
+  await visivel(page, `Condomínio ${condominio.nome_residencial} atualizado. Estado: Inativo.`);
+  assert.equal(alteracoesCondominio(estado).length, 1); assert.deepEqual(alteracoesCondominio(estado)[0].body, { versao: "a".repeat(64), ativo: false, motivo: "Encerramento de novas entradas" });
+  await visivel(page, "Nenhum condomínio encontrado nesta consulta.");
+});
+test("P30 reativação explícita com motivo sem aprovar moradores", async t => {
+  const { page, estado } = await preparar(t, { sessao: true, modo: "super", catalogoCondominios: [{ ...condominio, ativo: false }] });
+  await page.goto(`${origem}/admin/condominios`); await page.getByRole("button", { name: "Reativar condomínio", exact: true }).click();
+  await page.getByLabel("Motivo da alteração *", { exact: true }).fill("Reabertura"); await page.getByRole("button", { name: "Confirmar reativação", exact: true }).click();
+  await visivel(page, `Condomínio ${condominio.nome_residencial} atualizado. Estado: Ativo.`);
+  assert.equal(alteracoesCondominio(estado)[0].body.ativo, true); assert.equal(estado.chamadas.filter(c => c.metodo === "PATCH").length, 1);
+});
+for (const tipo of ["conflito", "validacao", "rede"]) test(`P30 ${tipo} preserva rascunho e nunca repete escrita automaticamente`, async t => {
+  const { page, estado } = await preparar(t, { sessao: true, modo: "super", ...(tipo === "rede" ? { perderRespostaGestao: true } : { erroGestaoCondominio: { status: tipo === "conflito" ? 409 : 400, codigo: tipo === "conflito" ? "CONDOMINIUM_UPDATE_CONFLICT" : "VALIDATION_ERROR", detalhes: { fieldErrors: { endereco: ["Confira o endereço."] } } } }) });
+  await page.goto(`${origem}/admin/condominios?editar=${condominio.id_condominio}`);
+  const input = page.getByLabel("Endereço completo *", { exact: true }); await input.fill("Rascunho novo"); await page.getByRole("button", { name: "Salvar alterações", exact: true }).click();
+  await page.getByRole("alert").first().waitFor(); assert.equal(await input.inputValue(), "Rascunho novo"); assert.equal(alteracoesCondominio(estado).length, 1);
+  if (tipo !== "validacao") {
+    assert.equal(await page.getByRole("button", { name: "Salvar alterações", exact: true }).isDisabled(), true);
+    estado.erroGestaoCondominio = null; estado.perderRespostaGestao = false;
+    await page.getByRole("button", { name: "Recarregar dados do condomínio", exact: true }).click();
+    await page.waitForFunction(() => !document.querySelector("dialog fieldset")?.disabled);
+    assert.equal(await input.inputValue(), tipo === "rede" ? "Rascunho novo" : condominio.endereco);
+  }
+});
+for (const largura of [360, 1280]) test(`P30 diálogo com nomes longos, teclado e sem overflow em ${largura}px`, async t => {
+  const { page } = await preparar(t, { sessao: true, modo: "super", catalogoCondominios: [{ ...condominio, nome_residencial: "x".repeat(160), endereco: "x".repeat(255) }] });
+  await page.setViewportSize({ width: largura, height: 800 }); await page.goto(`${origem}/admin/condominios`); await page.getByRole("button", { name: "Editar condomínio", exact: true }).click();
+  await page.getByLabel("Endereço completo *", { exact: true }).waitFor(); await page.keyboard.press("Tab");
+  assert.equal(await page.evaluate(() => document.querySelector("dialog").contains(document.activeElement)), true);
+  assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth && document.querySelector("dialog").scrollWidth <= document.querySelector("dialog").clientWidth), true);
+  await page.screenshot({ path: join(tmpdir(), `porta-p30-dialogo-${largura}.png`), fullPage: true });
+});
 async function abrirCadastroCondominio(page) {
   await page.goto(`${origem}/admin/condominios`);
   await page.getByRole("button", { name: "Cadastrar condomínio", exact: true }).click();
@@ -1422,7 +1507,7 @@ test("P29 resposta perdida não repete POST e permite conferir condomínio já c
 });
 test("P29 catálogo: erro/retry, vazio, paginação e filtros sobrevivem refresh", async t => {
   const { page, estado } = await preparar(t, { sessao: true, modo: "super", erroCatalogo: true });
-  await page.goto(`${origem}/admin/condominios`); await page.getByRole("alert").filter({ hasText: "Não foi possível consultar o catálogo ativo." }).waitFor();
+  await page.goto(`${origem}/admin/condominios`); await page.getByRole("alert").filter({ hasText: "Não foi possível consultar os condomínios." }).waitFor();
   estado.erroCatalogo = false; await page.getByRole("button", { name: "Tentar novamente", exact: true }).click();
   await page.getByRole("article", { name: "Condomínio Residencial Exemplo", exact: true }).waitFor();
   await page.getByRole("button", { name: "Próxima", exact: true }).click(); await page.waitForURL(url => url.pathname === "/admin/condominios" && url.searchParams.get("pagina") === "2");
@@ -1435,5 +1520,5 @@ for (const largura of [360, 390, 768, 1280]) test(`P29 formulário responsivo ${
   await page.setViewportSize({ width: largura, height: 844 }); await abrirCadastroCondominio(page); await preencherCondominio(page);
   await page.getByLabel("CEP *", { exact: true }).focus(); assert.equal(await page.getByLabel("CEP *", { exact: true }).evaluate(el => el === document.activeElement), true);
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
-  if (largura === 390) await page.screenshot({ path: "/tmp/porta-p29-condominios.png", fullPage: true });
+  if (largura === 390) await page.screenshot({ path: join(tmpdir(), "porta-p29-condominios.png"), fullPage: true });
 });

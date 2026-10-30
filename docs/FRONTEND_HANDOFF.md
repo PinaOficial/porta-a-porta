@@ -1,6 +1,6 @@
 # Contratos para o frontend — backend auditado
 
-Contratos do Prompt 22 com adendo do Prompt 29, 16/10/2026. Consumir os contratos reais abaixo e o [inventário completo](BACKEND_INVENTARIO.md). O texto anterior registra a auditoria do Prompt 22; a seção do Prompt 29 abaixo descreve a nova interface.
+Contratos do Prompt 22 com adendos dos Prompts 29 e 30 (30/10/2026). Consumir os contratos reais abaixo e o [inventário completo](BACKEND_INVENTARIO.md). As seções anteriores registram suas respectivas etapas; o adendo do Prompt 30 descreve a gestão atual de condomínios.
 
 ## Convenções comuns
 
@@ -313,3 +313,26 @@ Formulário tem labels/required, erros por campo, fieldset/botão bloqueados dur
 Catálogo usa GET /condominios existente (dados[] + paginacao raiz, UI 20, máximo API 50), busca/página na URL, loading/vazio/erro/retry e AbortController. Sem cache persistente a invalidar; seletores de onboarding/transferência releem ao montar/buscar/refazer consulta. O novo condomínio aceita onboarding sem admin local; primeiro vínculo é PENDENTE/admin=false, super aprova e opcionalmente promove pelo PATCH /admin/vinculos/:id/admin. Nenhum privilégio automático.
 
 Testes Node, Chromium com APIs simuladas e jornada browser/Express/PostgreSQL local estão descritos em [CONDOMINIOS_SUPERADMIN.md](CONDOMINIOS_SUPERADMIN.md). Auth/JWKS/Storage remotos e configuração Supabase de demonstração continuam pendentes de homologação. Sem edição/desativação/exclusão ou GET administrativo novo.
+
+## Prompt 30 — Gestão de condomínios (30/10/2026)
+
+Superadmin passa a gerir ativos/inativos em `/admin/condominios`, mantendo o cadastro anterior. Admin local/morador não recebem controles nem acesso direto à rota/novos endpoints. Conta suspensa permanece bloqueada globalmente. O catálogo de destinos `GET /condominios` continua somente ativo, com seu DTO anterior, sem versão/estado extras.
+
+| API exclusiva de super | Entrada | Retorno |
+| --- | --- | --- |
+| GET `/admin/condominios` | busca opcional trim≤160, ativo=true/false opcional, pagina=1, limite=20≤50 | dados[] + paginacao na raiz |
+| GET `/admin/condominios/:id` | UUID; sem body/query | dados: CondominioAdmin |
+| PATCH `/admin/condominios/:id` | versao + pelo menos um campo cadastral alterado | dados: CondominioAdmin |
+| PATCH `/admin/condominios/:id/status` | versao + ativo boolean + motivo trim 1..255 | dados: CondominioAdmin |
+
+Todos retornam 200; o POST anterior mantém 201/DTO inalterado. `CondominioAdmin = {id_condominio,nome_residencial,cep,endereco,ativo,created_at,versao}`. Data ISO UTC; versão string opaca de 64 hexadecimais: devolver sem interpretar, não persistir como ID/data. Buscar por nome é literal e a ordem é nome/UUID ASC. Edição permite apenas nome trim 1..160, CEP exatamente oito dígitos e endereço trim 1..255; omitidos preservados, vazio/null/extra rejeitados. Nenhuma unicidade por nome/CEP foi acrescentada.
+
+Erros comuns 400 VALIDATION_ERROR com detalhes por campo, 401 UNAUTHENTICATED, 403 FORBIDDEN/ACCOUNT_SUSPENDED, 404 CONDOMINIO_NOT_FOUND e 500 sanitizado. `409 CONDOMINIUM_UPDATE_CONFLICT` exige reler GET por ID, revisar e confirmar novamente; não atualizar versão automaticamente mantendo uma intenção antiga. Estado desejado com versão atual sem mudança efetiva é no-op sem auditoria; uma versão antiga continua conflito, inclusive após resposta perdida.
+
+Inativar bloqueia novas solicitações residenciais/transferências de entrada e aprovação de pendências. Pendências não são apagadas/rejeitadas. Moradores já ATIVOS continuam acessos permitidos, anúncios, pedidos e chat; históricos/contas/admins não são alterados. Saída para destino ativo continua sujeita às regras existentes. Reativar não remove suspensões, aprova pessoas ou muda papéis. Onboarding indisponível mantém CONDOMINIO_NOT_FOUND; transferência e aprovação retornam CONDOMINIUM_INACTIVE, agora também na aprovação inicial. Exibir mensagem compreensível ao aprovar destino inativo; consulta/rejeição seguem disponíveis.
+
+UI usa busca/ativo/pagina na URL e diálogo recarregável `?editar=UUID` ou `?estado=UUID`. Consulta dados pelo ID, valida com Zod, preserva entradas em falha recuperável, envia diferença/versão, trava submit e aguarda servidor. Estado exige confirmação com nome/estado/motivo e explicação dos efeitos. Dialog tem labels, foco inicial/Tab/Escape/cancelar e retorno ao acionador. Conflito/rede incerta bloqueia reenvio até recarga explícita; recarga substitui rascunho e permite revisar. Não há retry automático de escrita.
+
+Após sucesso, refaz a listagem com os filtros atuais e ajusta a página; item que sai do filtro desaparece. Criar retorna à busca pelo novo nome, incluindo ambos os estados. Loading/vazio/erro/retry e AbortController foram mantidos. Abrir diálogo não recarrega a lista; seletores de onboarding/transferência não possuem cache persistente e consultam novamente ao montar/buscar/atualizar. Backend sempre revalida destino com lock transacional, mesmo em tela antiga.
+
+Auditoria interna transacional: UPDATE_CONDOMINIUM/ACTIVATE_CONDOMINIUM/DEACTIVATE_CONDOMINIUM, antes/depois somente dos campos alterados e motivo para estado. Sem rota de auditoria nova. Decisões, concorrência, arquivos e evidências: [gestão](SUPERADMIN_GESTAO_CONDOMINIOS.md) e [testes](SUPERADMIN_GESTAO_CONDOMINIOS_TESTES.md). Homologação Supabase remoto e dispositivos físicos permanece pendente.

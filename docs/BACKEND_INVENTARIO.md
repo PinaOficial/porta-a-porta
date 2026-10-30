@@ -1,6 +1,6 @@
 # Inventário e auditoria do backend
 
-Auditoria de 16/10/2026 (Prompt 22), com adendo de criação no Prompt 29. Fontes: código atual, Prisma introspectado, DDL existente e testes. O roteiro `.docx` é referência de domínio; não prova implementação.
+Auditoria de 16/10/2026 (Prompt 22), com adendos de criação no Prompt 29 e gestão no Prompt 30 (30/10/2026). Fontes: código atual, Prisma introspectado, DDL existente e testes. O roteiro `.docx` é referência de domínio; não prova implementação.
 
 ## Descoberta e comparação
 
@@ -8,7 +8,7 @@ Rotas descobertas percorrendo a AST TypeScript de `app.use`, montagens de `apiRo
 
 **Antes: 25 rotas. Depois: 27.** As 25 esperadas no Prompt 22 existem e estão **OK**. Nenhuma esperada ausente/parcial e nenhuma extra suspeita/legada. Duas leituras estavam ausentes para as telas de Produto e Perfil: foram implementadas como **ROTA EXTRA JUSTIFICADA**, `GET /api/produtos/:id` e `GET /api/usuarios/me`.
 
-Estado atual (Prompt 29), 28 rotas. Por módulo de router: health 1; condomínios 1; usuários 2; vínculos 2; administração 8; categorias 1; produtos 8 (incluem 2 de imagens); pedidos 3; chat 2. Auditoria e histórico de pedido são persistência interna, sem rotas próprias.
+Estado atual (Prompt 30), 32 rotas. Por módulo de router: health 1; condomínios 1; usuários 2; vínculos 2; administração 12; categorias 1; produtos 8 (incluem 2 de imagens); pedidos 3; chat 2. Auditoria e histórico de pedido são persistência interna, sem rotas próprias.
 
 ## Rotas reais
 
@@ -329,3 +329,22 @@ O DDL e schema introspectado já têm UUID/default ativo/data, VARCHAR 160/8/255
 Autenticação resolve super na tabela e bloqueia SUSPENSA; middleware exigirSuperAdmin() precede Zod; service também exige super_admin===true. Admins de dois tenants/moradores são 403 mesmo com body/claims forjados. Erros de parser/Zod 400, ausência/JWT inválido 401, conta suspensa 403, falha inesperada 500 sanitizada. Nenhum 409 por coincidência de CEP/nome.
 
 Novos testes unitários e HTTP/PostgreSQL exercitam defaults/DTO, efeitos exatos, rollback, GET por busca e ciclo onboarding PENDENTE → primeiro aprovado pelo super sem admin prévio → promoção explícita → local continua proibido. Relatório, comandos, resultados atuais e lista de arquivos: [CONDOMINIOS_SUPERADMIN.md](CONDOMINIOS_SUPERADMIN.md). As contagens de 475 testes/27 rotas nas seções da auditoria anterior são evidência histórica do Prompt 22.
+
+## Adendo Prompt 30 — 30/10/2026
+
+Quatro operações novas registradas em administracaoRoutes, com implementação no módulo condomínios; total atual **32 operações HTTP**, administração 12. O adendo do Prompt 29 acima é histórico. Todas as novas exigem JWT/conta não suspensa/super resolvido na tabela, com autorização também no service.
+
+| Método | Rota | Params/query/body estritos | Sucesso | Transação e testes |
+| --- | --- | --- | --- | --- |
+| GET | `/api/admin/condominios` | Sem body; busca≤160, ativo=true/false opcionais; pagina=1,limite=20≤50 | 200 dados:CondominioAdmin[], paginacao raiz | RepeatableRead página/count; gestao-condominios.integration.test.ts |
+| GET | `/api/admin/condominios/:id` | UUID; sem body/query | 200 dados:CondominioAdmin | Leitura por ID; gestao-condominios.integration.test.ts |
+| PATCH | `/api/admin/condominios/:id` | UUID, query vazia, versao + subconjunto não vazio de nome_residencial/cep/endereco | 200 dados:CondominioAdmin | ReadCommitted, FOR UPDATE, versão e audit atômicos; unidade + integração PG |
+| PATCH | `/api/admin/condominios/:id/status` | UUID, query vazia, versao, ativo:boolean, motivo trim 1..255 | 200 dados:CondominioAdmin | ReadCommitted, FOR UPDATE, versão e audit atômicos; unidade + integração PG |
+
+CondominioAdmin seleciona somente ID/nome/CEP/endereço/ativo/created_at ISO e versão opaca SHA-256 de xmin+campos (xmin não exposto). Sem PII de moradores. Ordenação nome/UUID ASC, busca literal e count com mesmos filtros/snapshot. Nome/endereço trim 1..160/1..255, CEP oito dígitos; null/extra rejeitados. Sem unicidade inventada. POST do Prompt 29 conserva contrato/DTO. Sem mudança DDL/Prisma.
+
+400 VALIDATION_ERROR, 401 UNAUTHENTICATED, 403 FORBIDDEN/ACCOUNT_SUSPENDED, 404 CONDOMINIO_NOT_FOUND, 409 CONDOMINIUM_UPDATE_CONFLICT e 500 INTERNAL_ERROR sanitizado. Versão antiga é conflito antes de gravar, inclusive se estado desejado coincide. No-op com versão atual não atualiza linha nem duplica auditoria. UPDATE_CONDOMINIUM/ACTIVATE_CONDOMINIUM/DEACTIVATE_CONDOMINIUM gravam ator/entidade/condomínio/timestamp, metadata antes/depois e motivo no estado; rollback se auditoria falha.
+
+Inativo bloqueia novas entradas/aprovação, sem alterar pessoas/vínculos/produtos/pedidos/chats. Onboarding revalida dentro da transação; transferência e aprovação (inclusive inicial) mantêm FOR SHARE no destino até commit, coordenado com FOR UPDATE de desativação. Erros históricos preservados: onboarding CONDOMINIO_NOT_FOUND; transferência/aprovação CONDOMINIUM_INACTIVE. Consulta/rejeição/suspensão local explícita continuam; reativação não aprova/restaura automaticamente. Vitrine de morador ATIVO permanece disponível; seleção ativa do super continua contrato anterior.
+
+Novos scripts test:gestao-condominios e test:gestao-condominios:integration, total 33. Oito corridas PG reais cobrem ambas as ordens com onboarding, transferência e duas aprovações, com barreiras/espera observada no banco. Arquivos, versões, limitações e evidências em [SUPERADMIN_GESTAO_CONDOMINIOS.md](SUPERADMIN_GESTAO_CONDOMINIOS.md) e [testes](SUPERADMIN_GESTAO_CONDOMINIOS_TESTES.md).

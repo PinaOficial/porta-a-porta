@@ -53,6 +53,7 @@ test("service nega falta de autenticação ou autoridade antes de iniciar transa
 });
 
 function simularAprovacao(erroAtualizacao?: unknown, quantidade = 1) {
+  simularMetodo(prisma, "$queryRaw", async () => [{ id_condominio: idCondominio, ativo: true }]);
   const buscar = simularMetodo(prisma.vinculo_condominio, "findUnique", async () => alvo);
   const ativo = simularMetodo(prisma.vinculo_condominio, "findFirst", async (_args: TiposPrisma.vinculo_condominioFindFirstArgs) => null);
   const atualizar = simularMetodo(prisma.vinculo_condominio, "updateMany", async (_args: TiposPrisma.vinculo_condominioUpdateManyArgs) => {

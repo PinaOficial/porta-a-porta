@@ -189,6 +189,10 @@ summary { cursor: pointer; font-weight: 650; min-height: 30px; padding: 6px 0; }
 .perfil, .administracao { max-width: 960px; margin-inline: auto; }
 .condominios-admin > .card { margin-block: 24px; }
 .condominios-admin h3, .condominios-admin p { overflow-wrap: anywhere; }
+.dialogo-condominio { width: min(92vw, 620px); max-height: 90dvh; overflow-y: auto; border: 1px solid var(--borda, #bfa99b); border-radius: 16px; padding: 24px; background: var(--creme, #fffaf4); color: inherit; }
+.dialogo-condominio::backdrop { background: #291c1677; }
+.dialogo-condominio h2, .dialogo-condominio p { overflow-wrap: anywhere; }
+.dialogo-condominio > button { margin-top: 16px; }
 .perfil > .card { margin-block: 24px; }
 .perfil h2, .vinculo-admin h2 { margin-top: 0; overflow-wrap: anywhere; }
 .residencia .detalhes > div { margin-top: 14px; }

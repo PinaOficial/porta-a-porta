@@ -3,7 +3,7 @@ import { prisma } from "../../lib/prisma.js";
 import { ErroDominio } from "../../lib/erro-dominio.js";
 import { identificadoresDaConstraint } from "../../lib/erro-prisma.js";
 import type { ContextoAutenticado } from "../../types/auth.js";
-import { buscarCondominioAtivoPorId } from "../condominios/condominio.repository.js";
+import { buscarCondominioParaTransferencia } from "../condominios/condominio.repository.js";
 import { criarVinculoPendenteDoOnboarding } from "../vinculos/vinculo.repository.js";
 import {
   buscarUsuarioPorId, buscarCondominoPorCpf, buscarUsuarioPorEmail,
@@ -64,12 +64,12 @@ export async function realizarOnboarding(
   if ((await buscarUsuarioPorEmail(email)).length > 0) {
     throw new ErroDominio("EMAIL_ALREADY_REGISTERED", 409, "E-mail já cadastrado.");
   }
-  if (!await buscarCondominioAtivoPorId(dados.id_condominio)) {
-    throw new ErroDominio("CONDOMINIO_NOT_FOUND", 404, "Condomínio não encontrado.");
-  }
 
   try {
     return await prisma.$transaction(async (tx) => {
+      const destino = await buscarCondominioParaTransferencia(tx, dados.id_condominio);
+      // Preserva o código histórico do onboarding para destino indisponível.
+      if (!destino?.ativo) throw new ErroDominio("CONDOMINIO_NOT_FOUND", 404, "Condomínio não encontrado.");
       const usuario = await criarUsuarioDoOnboarding(tx, auth.id_usuario, email);
       const condomino = await criarCondominoDoOnboarding(tx, auth.id_usuario, dados);
       const vinculo = await criarVinculoPendenteDoOnboarding(tx, auth.id_usuario, dados);

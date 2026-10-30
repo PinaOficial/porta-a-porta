@@ -193,6 +193,8 @@ export async function aprovarVinculo(
   // ReadCommitted reavalia PENDENTE após esperar outra aprovação ou rejeição.
   return prisma.$transaction(async (tx) => {
     const alvo = await buscarPendenteAutorizado(tx, escopo, idVinculo);
+    const destino = await buscarCondominioParaTransferencia(tx, alvo.id_condominio);
+    if (!destino?.ativo) throw new ErroDominio("CONDOMINIUM_INACTIVE", 409, "Condomínio de destino inativo.");
     const instante = new Date();
     const outro = await buscarOutroVinculoAtivo(tx, alvo.id_condomino, alvo.id_vinculo);
     const antigo = outro ? await prepararTransferencia(tx, auth!, escopo, alvo, outro, instante) : null;

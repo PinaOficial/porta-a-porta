@@ -2,9 +2,10 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { Aviso, Campo } from "../../components/ui/Campo";
 import { ApiError, type ListaPaginada } from "../../lib/api";
-import { criarCondominioAdmin, listarCondominios } from "../condominios/condominio.api";
+import { criarCondominioAdmin, listarCondominiosAdmin } from "../condominios/condominio.api";
 import { criarCondominioSchema } from "../condominios/condominio.schema";
-import type { Condominio, CondominioCriado } from "../condominios/condominio.types";
+import type { CondominioAdmin, CondominioCriado } from "../condominios/condominio.types";
+import { GestaoCondominioDialog } from "./GestaoCondominioDialog";
 import { useEstadoUsuario } from "../perfil/EstadoUsuarioProvider";
 
 const vazio = { nome_residencial: "", cep: "", endereco: "" };
@@ -13,12 +14,16 @@ const formatarCep = (cep: string) => cep.replace(/^([0-9]{5})([0-9]{3})$/, "$1-$
 export function CondominiosAdminPage() {
   const { recarregarEstado } = useEstadoUsuario();
   const [params, setParams] = useSearchParams();
+  const atualizarParams = useRef(setParams); atualizarParams.current = setParams;
   const filtro = params.get("busca")?.trim() ?? "";
+  const ativo = ["true", "false"].includes(params.get("ativo") ?? "") ? params.get("ativo")! : "";
+  const editar = params.get("editar"), estado = params.get("estado");
   const numeroPagina = Number(params.get("pagina") ?? "1");
   const pagina = Number.isInteger(numeroPagina) && numeroPagina > 0 && numeroPagina <= 107374183 ? numeroPagina : 1;
   const [busca, setBusca] = useState(filtro);
   const [versao, setVersao] = useState(0);
-  const [resultado, setResultado] = useState<ListaPaginada<Condominio> | null>(null);
+  const [resultado, setResultado] = useState<ListaPaginada<CondominioAdmin> | null>(null);
+  const [sucesso, setSucesso] = useState("");
   const [carregando, setCarregando] = useState(true);
   const [erroLista, setErroLista] = useState("");
   const [formulario, setFormulario] = useState(false);
@@ -34,20 +39,25 @@ export function CondominiosAdminPage() {
   useEffect(() => {
     const abort = new AbortController();
     setCarregando(true); setErroLista(""); setResultado(null);
-    void listarCondominios(filtro, pagina, abort.signal).then(resposta => {
-      if (!abort.signal.aborted) setResultado(resposta);
+    void listarCondominiosAdmin(filtro, pagina, ativo, abort.signal).then(resposta => {
+      if (!abort.signal.aborted) {
+        if (pagina > Math.max(1, resposta.paginacao.total_paginas)) {
+          atualizarParams.current(anteriores => { const novos = new URLSearchParams(anteriores); novos.set("pagina", String(Math.max(1, resposta.paginacao.total_paginas))); return novos; }, { replace: true });
+        } else setResultado(resposta);
+      }
     }).catch(erro => {
       if (abort.signal.aborted) return;
-      setErroLista("Não foi possível consultar o catálogo ativo.");
+      setErroLista("Não foi possível consultar os condomínios. Confira sua sessão e tente novamente.");
       if (erro instanceof ApiError && erro.status === 403) void recarregarEstado();
     }).finally(() => { if (!abort.signal.aborted) setCarregando(false); });
     return () => abort.abort();
-  }, [filtro, pagina, versao, recarregarEstado]);
+  }, [filtro, pagina, ativo, versao, recarregarEstado]);
 
-  function consultar(nome: string, proximaPagina = 1) {
+  function consultar(nome: string, proximaPagina = 1, estadoAtivo = ativo) {
     const novos = new URLSearchParams();
     if (nome.trim()) novos.set("busca", nome.trim());
     if (proximaPagina !== 1) novos.set("pagina", String(proximaPagina));
+    if (estadoAtivo) novos.set("ativo", estadoAtivo);
     setParams(novos); setVersao(v => v + 1);
   }
   async function salvar(event: FormEvent) {
@@ -61,7 +71,7 @@ export function CondominiosAdminPage() {
       const resposta = await criarCondominioAdmin(validacao.data);
       if (!montado.current) return;
       setCriado(resposta.dados); setFormulario(false); setDados(vazio);
-      consultar(resposta.dados.nome_residencial);
+      consultar(resposta.dados.nome_residencial, 1, "");
     } catch (erro) {
       if (!montado.current) return;
       if (erro instanceof ApiError && erro.codigo === "VALIDATION_ERROR") {
@@ -78,7 +88,13 @@ export function CondominiosAdminPage() {
 
   return <section className="administracao condominios-admin">
     <Link to="/admin" className="voltar-vitrine">← Administração</Link>
-    <div className="titulo-vitrine"><h1>Condomínios</h1><p>Catálogo de condomínios ativos. O cadastro é exclusivo do super admin.</p></div>
+    <div className="titulo-vitrine"><h1>Condomínios</h1><p>Cadastro e gestão de condomínios ativos e inativos, exclusivos do super admin.</p></div>
+    {sucesso && <Aviso>{sucesso}</Aviso>}
+    {(editar || estado) && <GestaoCondominioDialog key={`${editar ?? estado}:${Boolean(estado)}`} id={(editar ?? estado)!} status={Boolean(estado)} fechar={() => setParams(anteriores => { const novos = new URLSearchParams(anteriores); novos.delete("editar"); novos.delete("estado"); return novos; })} sucesso={item => {
+      setSucesso(`Condomínio ${item.nome_residencial} atualizado. Estado: ${item.ativo ? "Ativo" : "Inativo"}.`);
+      setParams(anteriores => { const novos = new URLSearchParams(anteriores); novos.delete("editar"); novos.delete("estado"); return novos; });
+      setVersao(v => v + 1);
+    }} />}
     {criado && <Aviso><strong>Condomínio cadastrado: {criado.nome_residencial}</strong><p>CEP {formatarCep(criado.cep)} · {criado.endereco}</p><p>Ativo · ID {criado.id_condominio}</p><p>Os primeiros moradores podem solicitar acesso pelo onboarding. Aprove a solicitação e, se desejado, promova um morador ativo em Moradores e vínculos.</p></Aviso>}
     {!formulario && <button className="botao-principal" onClick={() => { setFormulario(true); setCriado(null); setCampos({}); setErro(""); setIncerto(false); }}>Cadastrar condomínio</button>}
     {formulario && <form className="card" onSubmit={e => void salvar(e)} noValidate><h2>Novo condomínio</h2>
@@ -92,12 +108,13 @@ export function CondominiosAdminPage() {
       </fieldset>
     </form>}
     <section id="catalogo-condominios" className="card" aria-busy={carregando}>
-      <h2>Consultar condomínios cadastrados</h2><p>Somente condomínios ativos, com busca por nome.</p>
+      <h2>Consultar condomínios cadastrados</h2><p>Ativos e inativos, com busca por nome.</p>
+      <div className="campo"><label htmlFor="estado-catalogo">Estado do condomínio</label><select id="estado-catalogo" value={ativo} onChange={e => consultar(filtro, 1, e.target.value)}><option value="">Todos</option><option value="true">Ativos</option><option value="false">Inativos</option></select></div>
       <form className="filtros-vitrine" onSubmit={e => { e.preventDefault(); consultar(busca); }}><Campo id="busca-catalogo" label="Buscar condomínio" type="search" maxLength={160} value={busca} onChange={e => setBusca(e.target.value)} /><button className="botao-secundario">Buscar</button><button type="button" className="botao-texto" onClick={() => setVersao(v => v + 1)}>Atualizar catálogo</button></form>
       {carregando && <p role="status">Consultando condomínios…</p>}
       {erroLista && <Aviso erro>{erroLista} <button className="botao-texto" onClick={() => setVersao(v => v + 1)}>Tentar novamente</button></Aviso>}
       {resultado?.dados.length === 0 && <p role="status">Nenhum condomínio encontrado nesta consulta.</p>}
-      {resultado?.dados.map(item => <article className="card" key={item.id_condominio} aria-label={`Condomínio ${item.nome_residencial}`}><h3>{item.nome_residencial}</h3><p>CEP {formatarCep(item.cep)}</p><p>{item.endereco}</p></article>)}
+      {resultado?.dados.map(item => <article className="card" key={item.id_condominio} aria-label={`Condomínio ${item.nome_residencial}`}><h3>{item.nome_residencial}</h3><p>Estado: {item.ativo ? "Ativo" : "Inativo"}</p><p>CEP {formatarCep(item.cep)}</p><p>{item.endereco}</p><div className="acoes-admin"><button className="botao-secundario" onClick={() => setParams(anteriores => { const novos = new URLSearchParams(anteriores); novos.delete("estado"); novos.set("editar", item.id_condominio); return novos; })}>Editar condomínio</button><button className="botao-secundario" onClick={() => setParams(anteriores => { const novos = new URLSearchParams(anteriores); novos.delete("editar"); novos.set("estado", item.id_condominio); return novos; })}>{item.ativo ? "Desativar condomínio" : "Reativar condomínio"}</button></div></article>)}
       {resultado && resultado.paginacao.total_paginas > 1 && <nav className="paginacao" aria-label="Paginação dos condomínios"><button className="botao-secundario" disabled={pagina === 1 || carregando} onClick={() => consultar(filtro, pagina - 1)}>Anterior</button><span>Página {pagina} de {resultado.paginacao.total_paginas}</span><button className="botao-secundario" disabled={pagina >= resultado.paginacao.total_paginas || carregando} onClick={() => consultar(filtro, pagina + 1)}>Próxima</button></nav>}
     </section>
   </section>;

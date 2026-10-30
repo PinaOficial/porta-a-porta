@@ -2,7 +2,7 @@
 
 Este arquivo é a instrução principal para agentes de código (Codex) que trabalharem neste repositório.
 
-Contratos auditados no Prompt 22, MVP auditado no Prompt 28 e cadastro exclusivo de condomínios acrescentado no Prompt 29 (16/10/2026). Para contratos e rastreabilidade, leia [docs/BACKEND_INVENTARIO.md](docs/BACKEND_INVENTARIO.md) e [docs/FRONTEND_HANDOFF.md](docs/FRONTEND_HANDOFF.md). Planejamento antigo não prova que uma rota existe; confira código, schema e testes atuais.
+Contratos auditados no Prompt 22, MVP auditado no Prompt 28, cadastro de condomínios no Prompt 29 e gestão de condomínios no Prompt 30 (30/10/2026). Para contratos e rastreabilidade, leia [docs/BACKEND_INVENTARIO.md](docs/BACKEND_INVENTARIO.md) e [docs/FRONTEND_HANDOFF.md](docs/FRONTEND_HANDOFF.md). Planejamento antigo não prova que uma rota existe; confira código, schema e testes atuais.
 
 Leia este documento **antes de alterar código**.
 
@@ -604,13 +604,17 @@ no frontend.
 
 ## 20. BACKEND IMPLEMENTADO
 
-O prefixo é `/api`. São 28 rotas registradas; tabela extraída das montagens reais dos routers, incluindo chat aninhado. Auth/Supabase controla signup/login/logout/sessão. A solicitação residencial inicial é criada no onboarding; não existe POST /api/vinculos independente. Envio de mensagem usa **/messages**, não /mensagens.
+O prefixo é `/api`. São 32 rotas registradas; tabela extraída das montagens reais dos routers, incluindo chat aninhado. Auth/Supabase controla signup/login/logout/sessão. A solicitação residencial inicial é criada no onboarding; não existe POST /api/vinculos independente. Envio de mensagem usa **/messages**, não /mensagens.
 
 | Método | Rota | Autorização | Objetivo |
 | --- | --- | --- | --- |
 | GET | `/api/health` | Pública | Saúde |
 | GET | `/api/condominios` | JWT, inclusive pré-onboarding/super | Seleção ativa |
 | POST | `/api/admin/condominios` | Somente super admin; conta global não suspensa | Cadastrar condomínio ativo com auditoria atômica |
+| GET | `/api/admin/condominios` | Somente super admin | Listar ativos/inativos, busca, filtro ativo e paginação |
+| GET | `/api/admin/condominios/:id` | Somente super admin | Dados cadastrais e versão opaca |
+| PATCH | `/api/admin/condominios/:id` | Somente super admin | Edição parcial com versão e auditoria atômica |
+| PATCH | `/api/admin/condominios/:id/status` | Somente super admin | Estado desejado, motivo, versão e auditoria atômica |
 | GET | `/api/vinculos/me` | JWT, inclusive histórico/super | Estado residencial |
 | POST | `/api/vinculos/transferencia` | Vínculo ATIVO | Solicitar destino PENDENTE |
 | GET | `/api/admin/vinculos` | Admin local do tenant ou super global | Gestão de vínculos |
@@ -727,7 +731,7 @@ O backend principal está implementado: JWT/JWKS, identidade/onboarding, víncul
 
 Antes de alterar, leia os dois documentos em docs e os módulos/testes reais. Depois de qualquer mudança de contrato, atualize o inventário, handoff e esta tabela. Não documentar route placeholder como endpoint registrado. Arquivos antigos em backend/*.md registram suas respectivas etapas; o catálogo atual consolidado está em docs.
 
-Scripts reais: `npm run build` (raiz, ambos os workspaces), `npm run dev` (ambos), e 31 scripts `test:*` em backend/package.json. Não existem scripts genéricos `typecheck` ou `test`. Cada script de teste executa `tsc -p tsconfig.test.json`; use os existentes e não afirme ter rodado scripts ausentes. Integrações usam ONBOARDING_TEST_DATABASE_URL, aceitam somente localhost/127.0.0.1 e banco `porta_onboarding_teste`; nunca apontar para banco de projeto/produção. Storage/JWKS de testes são simulados. Asserções de concorrência exigem PostgreSQL real descartável, não apenas mocks.
+Scripts reais: `npm run build` (raiz, ambos os workspaces), `npm run dev` (ambos), e 33 scripts `test:*` em backend/package.json. Não existem scripts genéricos `typecheck` ou `test` no backend. Cada script de teste executa `tsc -p tsconfig.test.json`; use os existentes e não afirme ter rodado scripts ausentes. Integrações usam ONBOARDING_TEST_DATABASE_URL, aceitam somente localhost/127.0.0.1 e banco `porta_onboarding_teste`; nunca apontar para banco de projeto/produção. Storage/JWKS de testes são simulados. Asserções de concorrência exigem PostgreSQL real descartável, não apenas mocks.
 
 ## 26. Convenções obrigatórias da API
 
@@ -847,3 +851,13 @@ Cadastro de condomínios implementado no Prompt 29 (16/10/2026):
 - Novos scripts reais: test:criar-condominio e test:criar-condominio:integration. Integração mantém allowlist local/porta_onboarding_teste. Rotas recontadas pela AST das montagens: 28 HTTP; 21 registros React. Evidências e arquivos em [docs/CONDOMINIOS_SUPERADMIN.md](docs/CONDOMINIOS_SUPERADMIN.md).
 - Escopo somente criação/consulta ativa; sem edição, exclusão, desativação, ViaCEP, síndico automático ou deploy. Supabase real continua sujeito à homologação no ambiente de demonstração.
 - Validação final do Prompt 29: build/TypeScript passaram; 31 scripts backend, 487 testes (167 unitários/320 PG); frontend Node 64; Chromium 172; jornada integrada 1, total 724, sem falhas/skips finais. Duas fixtures antigas de pedido tiveram data vencida corrigida para 2099, sem alterar regras. Domínio integrado usa PG/Express reais e Auth/JWKS/Storage simulados; Supabase remoto não homologado. MVP continua pronto para a próxima rodada de homologação interna controlada.
+
+Gestão de condomínios implementada no Prompt 30 (30/10/2026):
+
+- Quatro novas operações exclusivas de super: GET /api/admin/condominios, GET/PATCH /api/admin/condominios/:id e PATCH /api/admin/condominios/:id/status. Total 32 HTTP; 21 registros React mantidos. POST anterior não mudou. Listagem administrativa inclui ativos/inativos, busca literal, ativo opcional e paginação 1/20≤50 com snapshot e ordem nome/UUID.
+- Edição cadastral parcial estrita de nome/CEP/endereço exige versao. Estado exige versao, boolean desejado e motivo trim 1..255. DTO administrativo tem os seis campos cadastrais/estado/data mais versão opaca; sem PII. CONDOMINIUM_UPDATE_CONFLICT 409 exige recarga/revisão. No-op com versão atual não grava UPDATE nem audit; versão antiga é conflito.
+- Sem DDL/Prisma novo: token SHA-256 de xmin+campos, somente para comparação durante uma edição; não persistir como identificador eterno nem ordenar versões. Repository usa SQL parametrizado para xmin e locks. Escrita FOR UPDATE + comparação + update + UPDATE_CONDOMINIUM/ACTIVATE_CONDOMINIUM/DEACTIVATE_CONDOMINIUM (antes/depois/motivo) é atômica. Falha da auditoria reverte alteração.
+- Inativo impede novas entradas residenciais e aprovações, sem mudar vínculos/contas/admins/produtos/pedidos/chats existentes. Onboarding, solicitação de transferência e ambas as aprovações revalidam destino com FOR SHARE na mesma transação. Preservar esse lock coordenado com desativação e os mutexes/locks anteriores. Moradores ATIVOS mantêm operações; rejeição/consulta/suspensão explícita continuam; reativação não restaura suspensões nem aprova pendências.
+- /admin/condominios mantém cadastro e agora oferece ativos/inativos, filtro URL, edição e confirmação modal com motivo. Deep links ?editar=UUID/?estado=UUID consultam por ID. Conflito/resultado incerto mantém rascunho e exige recarga antes de nova escrita; sem retry automático. Refetch usa filtros atuais e corrige página. Abrir diálogo não deve desmontar a linha de origem; manter foco/Tab/Escape/cancelar e retorno do foco.
+- Novos scripts test:gestao-condominios e test:gestao-condominios:integration (33 backend). Testes novos: 4 unitários, 15 HTTP/PG, incluindo oito corridas reais com barreiras e espera observada em pg_stat_activity; dez cenários browser e extensão da jornada integrada. Fixture HTTP JPEG antiga truncada foi substituída por JPEG válido 1×1 após bloqueio do Avast, preservando nome adversarial e asserções; sem alterar upload ou desativar proteção.
+- Validação local: build/TypeScript, 506 backend, 64 frontend Node, 182 Chromium e uma jornada navegador/Express/PG: 753 testes finais aprovados, sem skips/falhas finais. Homologação Supabase remoto, leitor de tela e dispositivos físicos continuam pendentes. Relatórios: [docs/SUPERADMIN_GESTAO_CONDOMINIOS.md](docs/SUPERADMIN_GESTAO_CONDOMINIOS.md) e [testes](docs/SUPERADMIN_GESTAO_CONDOMINIOS_TESTES.md). Sem deploy, commit ou push.

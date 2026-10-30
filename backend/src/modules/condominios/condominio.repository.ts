@@ -48,6 +48,9 @@ export async function listarCondominiosAtivos(filtros: FiltrosCondominios) {
   return { condominios, total };
 }
 
-export function buscarCondominioParaTransferencia(tx: Prisma.TransactionClient, idCondominio: string) {
-  return tx.condominio.findUnique({ where: { id_condominio: idCondominio }, select: { id_condominio: true, ativo: true } });
+export async function buscarCondominioParaTransferencia(tx: Prisma.TransactionClient, idCondominio: string) {
+  const linhas = await tx.$queryRaw<{ id_condominio: string; ativo: boolean }[]>`
+    SELECT id_condominio, ativo FROM public.condominio WHERE id_condominio = ${idCondominio}::uuid FOR SHARE
+  `;
+  return linhas[0] ?? null;
 }
