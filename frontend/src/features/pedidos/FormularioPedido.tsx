@@ -19,6 +19,14 @@ export function FormularioPedido({ produto, bloqueado, atualizarProduto, aoCriar
   const [erro, setErro] = useState("");
   const [enviando, setEnviando] = useState(false);
   const [envioIncerto, setEnvioIncerto] = useState(false);
+  function limparErro(campo: string) {
+    setErros(anteriores => {
+      if (!(campo in anteriores)) return anteriores;
+      const proximos = { ...anteriores };
+      delete proximos[campo];
+      return proximos;
+    });
+  }
   const emVoo = useRef(false);
   const montado = useRef(false);
   useEffect(() => { montado.current = true; return () => { montado.current = false; }; }, []);
@@ -77,8 +85,8 @@ export function FormularioPedido({ produto, bloqueado, atualizarProduto, aoCriar
   }
   return <section className="card formulario-pedido" aria-labelledby="titulo-pedido"><h2 id="titulo-pedido">Combine seu pedido</h2><p>Escolha a quantidade e sugira quando deseja combinar a entrega com o vendedor.</p>
     <form onSubmit={enviar} noValidate aria-busy={enviando}><fieldset disabled={bloqueado || enviando || produto.estoque === 0 || !produto.ativo || !produto.categoria.ativo}>
-      <Campo id="quantidade" label="Quantidade" type="number" inputMode="numeric" min={1} max={produto.estoque} step={1} required value={quantidade} erro={erros.quantidade} onChange={e => setQuantidade(e.target.value)} />
-      <Campo id="hora_combinada" label="Data e hora combinada" type="datetime-local" min={horarioLocalAtual()} required value={horario} erro={erros.hora_combinada} aria-describedby="orientacao-horario" onChange={e => setHorario(e.target.value)} />
+      <Campo id="quantidade" label="Quantidade" type="number" inputMode="numeric" min={1} max={produto.estoque} step={1} required value={quantidade} erro={erros.quantidade} onChange={e => { setQuantidade(e.target.value); limparErro("quantidade"); }} />
+      <Campo id="hora_combinada" label="Data e hora combinada" type="datetime-local" min={horarioLocalAtual()} required value={horario} erro={erros.hora_combinada} aria-describedby="orientacao-horario" onChange={e => { setHorario(e.target.value); limparErro("hora_combinada"); }} />
       <p id="orientacao-horario" className="ajuda">Informe a data e a hora no seu fuso local.</p>
       <dl className="detalhes resumo-pedido"><dt>Produto</dt><dd>{produto.nome_produto}</dd><dt>Quantidade</dt><dd>{quantidade || "—"}</dd><dt>Preço unitário atual</dt><dd>{formatarReais(produto.preco)}</dd><dt>Total estimado</dt><dd>{total ? formatarReais(total) : "—"}</dd><dt>Horário escolhido</dt><dd>{horaIso ? new Date(horaIso).toLocaleString("pt-BR", { dateStyle: "long", timeStyle: "short" }) : "Escolha a data e hora acima"}</dd></dl>
       <p className="ajuda">O estoque e o valor final serão confirmados ao enviar.</p>

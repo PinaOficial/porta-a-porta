@@ -23,6 +23,18 @@ export function OnboardingPage() {
   const [erro, setErro] = useState("");
   const [enviando, setEnviando] = useState(false);
   const bloqueado = useRef(false);
+  function limparErro(campo: string) {
+    setErros(anteriores => {
+      if (!(campo in anteriores)) return anteriores;
+      const proximos = { ...anteriores };
+      delete proximos[campo];
+      return proximos;
+    });
+  }
+  function alterarCampo(campo: keyof typeof campos, valor: string) {
+    setCampos(anteriores => ({ ...anteriores, [campo]: valor }));
+    limparErro(campo);
+  }
   async function enviar(event: FormEvent) {
     event.preventDefault();
     if (bloqueado.current) return;
@@ -46,11 +58,11 @@ export function OnboardingPage() {
   }
   return <Pagina ampla><section className="card onboarding"><p className="sobretitulo">VAMOS NOS CONHECER</p><h1>Encontre sua vizinhança</h1><p>Complete seu cadastro e solicite acesso ao condomínio onde você mora. A administração vai conferir sua solicitação.</p>
     <form onSubmit={enviar} noValidate aria-busy={enviando}><fieldset disabled={enviando}>
-      <Campo id="nome_completo" label="Nome completo" autoComplete="name" required maxLength={160} value={campos.nome_completo} erro={erros.nome_completo} onChange={e => setCampos({ ...campos, nome_completo: e.target.value })} />
-      <div className="duas-colunas"><Campo id="cpf" label="CPF" inputMode="numeric" required value={campos.cpf} erro={erros.cpf} onChange={e => setCampos({ ...campos, cpf: e.target.value })} />
-      <Campo id="data_nascimento" label="Data de nascimento" type="date" autoComplete="bday" required value={campos.data_nascimento} erro={erros.data_nascimento} onChange={e => setCampos({ ...campos, data_nascimento: e.target.value })} /></div>
-      <SeletorCondominio selecionado={condominio} selecionar={setCondominio} erro={erros.id_condominio} />
-      <Campo id="moradia" label="Sua moradia" placeholder="Ex.: Bloco B, apartamento 302" autoComplete="address-line2" required maxLength={80} value={campos.moradia} erro={erros.moradia} onChange={e => setCampos({ ...campos, moradia: e.target.value })} />
+      <Campo id="nome_completo" label="Nome completo" autoComplete="name" required maxLength={160} value={campos.nome_completo} erro={erros.nome_completo} onChange={e => alterarCampo("nome_completo", e.target.value)} />
+      <div className="duas-colunas"><Campo id="cpf" label="CPF" inputMode="numeric" required value={campos.cpf} erro={erros.cpf} onChange={e => alterarCampo("cpf", e.target.value)} />
+      <Campo id="data_nascimento" label="Data de nascimento" type="date" autoComplete="bday" required value={campos.data_nascimento} erro={erros.data_nascimento} onChange={e => alterarCampo("data_nascimento", e.target.value)} /></div>
+      <SeletorCondominio selecionado={condominio} selecionar={item => { setCondominio(item); limparErro("id_condominio"); }} erro={erros.id_condominio} />
+      <Campo id="moradia" label="Sua moradia" placeholder="Ex.: Bloco B, apartamento 302" autoComplete="address-line2" required maxLength={80} value={campos.moradia} erro={erros.moradia} onChange={e => alterarCampo("moradia", e.target.value)} />
       {erro && <Aviso erro>{erro}</Aviso>}
       <button className="botao-principal largura" type="submit" disabled={!condominio}>{enviando ? "Enviando solicitação…" : "Solicitar acesso ao condomínio"}</button>
     </fieldset></form><Sair /></section></Pagina>;

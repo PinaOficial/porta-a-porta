@@ -56,6 +56,8 @@ test("schema normaliza CPF e textos e preserva a data civil em UTC", () => {
   assert.equal(dados.data_nascimento.toISOString(), "2000-05-20T00:00:00.000Z");
   assert.equal(onboardingBodySchema.parse({ ...payload, cpf: "12345678900" }).cpf, dados.cpf);
   assert.equal(onboardingBodySchema.safeParse({ ...payload, data_nascimento: "2024-02-29" }).success, true);
+  assert.equal(onboardingBodySchema.safeParse({ ...payload, data_nascimento: "2099-12-31" }).success, false);
+  assert.equal(onboardingBodySchema.safeParse({ ...payload, nome_completo: "X" }).success, false);
 });
 
 test("schema rejeita payload inválido e datas impossíveis sem impor idade ou dígitos verificadores", () => {

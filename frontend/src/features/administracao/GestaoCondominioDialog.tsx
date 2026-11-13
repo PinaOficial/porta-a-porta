@@ -17,6 +17,18 @@ export function GestaoCondominioDialog({ id, status, fechar, sucesso }: {
   const [campos, setCampos] = useState<Record<string, string[] | undefined>>({});
   const [erro, setErro] = useState(""), [bloqueado, setBloqueado] = useState(false);
   const [carregando, setCarregando] = useState(true), [enviando, setEnviando] = useState(false), [revisao, setRevisao] = useState(0);
+  function limparErro(campo: string) {
+    setCampos(anteriores => {
+      if (!(campo in anteriores)) return anteriores;
+      const proximos = { ...anteriores };
+      delete proximos[campo];
+      return proximos;
+    });
+  }
+  function alterarCampo(campo: keyof typeof dados, valor: string) {
+    setDados(anteriores => ({ ...anteriores, [campo]: valor }));
+    limparErro(campo);
+  }
   useEffect(() => {
     montado.current = true;
     const origem = document.activeElement as HTMLElement | null;
@@ -87,11 +99,11 @@ export function GestaoCondominioDialog({ id, status, fechar, sucesso }: {
         <legend>{status ? (base.ativo ? "Desativar condomínio" : "Reativar condomínio") : "Dados cadastrais"}</legend>
         {status ? <>
           <p>{base.ativo ? "Novas entradas residenciais, transferências para este destino e aprovações ficam bloqueadas. Moradores, anúncios, pedidos, conversas e históricos existentes são preservados." : "Novas entradas e análises de solicitações pendentes voltam a ser permitidas. Ninguém é aprovado automaticamente; suspensões e permissões são preservadas."}</p>
-          <Campo id="motivo-estado-condominio" label="Motivo da alteração *" required maxLength={255} value={motivo} onChange={e => setMotivo(e.target.value)} erro={campos.motivo?.[0]} />
+          <Campo id="motivo-estado-condominio" label="Motivo da alteração *" required maxLength={255} value={motivo} onChange={e => { setMotivo(e.target.value); limparErro("motivo"); }} erro={campos.motivo?.[0]} />
         </> : <>
-          <Campo id="editar-nome-condominio" label="Nome do condomínio/residencial *" required maxLength={160} value={dados.nome_residencial} onChange={e => setDados({ ...dados, nome_residencial: e.target.value })} erro={campos.nome_residencial?.[0]} />
-          <Campo id="editar-cep-condominio" label="CEP *" required inputMode="numeric" autoComplete="postal-code" maxLength={9} value={dados.cep} onChange={e => setDados({ ...dados, cep: e.target.value })} erro={campos.cep?.[0]} />
-          <Campo id="editar-endereco-condominio" label="Endereço completo *" required maxLength={255} value={dados.endereco} onChange={e => setDados({ ...dados, endereco: e.target.value })} erro={campos.endereco?.[0]} />
+          <Campo id="editar-nome-condominio" label="Nome do condomínio/residencial *" required maxLength={160} value={dados.nome_residencial} onChange={e => alterarCampo("nome_residencial", e.target.value)} erro={campos.nome_residencial?.[0]} />
+          <Campo id="editar-cep-condominio" label="CEP *" required inputMode="numeric" autoComplete="postal-code" maxLength={9} value={dados.cep} onChange={e => alterarCampo("cep", e.target.value)} erro={campos.cep?.[0]} />
+          <Campo id="editar-endereco-condominio" label="Endereço completo *" required maxLength={255} value={dados.endereco} onChange={e => alterarCampo("endereco", e.target.value)} erro={campos.endereco?.[0]} />
         </>}
         <button className="botao-principal">{enviando ? "Salvando…" : status ? (base.ativo ? "Confirmar desativação" : "Confirmar reativação") : "Salvar alterações"}</button>
       </fieldset>

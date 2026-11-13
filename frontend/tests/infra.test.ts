@@ -181,6 +181,8 @@ test("schemas normalizam onboarding, validam datas reais e confirmação de senh
   const dados = { nome_completo: " Maria Exemplo ", cpf: "000.000.000-00", data_nascimento: "2000-02-29", id_condominio: "12345678-1234-4234-8234-123456789012", moradia: " Apto 302 " };
   assert.deepEqual(onboardingSchema.parse(dados), { ...dados, cpf: "00000000000", nome_completo: "Maria Exemplo", moradia: "Apto 302" });
   assert.equal(onboardingSchema.safeParse({ ...dados, data_nascimento: "2001-02-29" }).success, false);
+  assert.equal(onboardingSchema.safeParse({ ...dados, data_nascimento: "2099-12-31" }).success, false);
+  assert.equal(onboardingSchema.safeParse({ ...dados, nome_completo: "X" }).success, false);
   assert.equal(cadastroSchema.safeParse({ email: "morador@example.com", senha: "abcdef", confirmacao: "abcdeg" }).success, false);
 });
 test("filtros da vitrine usam somente busca/categoria/página e limite 20", () => {
@@ -226,6 +228,9 @@ test("valida limites de nome, categoria e estoque sem campos de autoridade", () 
   for (const estoque of ["", "-1", "1.5", "2147483648"]) assert.equal(formularioProdutoSchema.safeParse({ ...camposProduto, estoque }).success, false);
   assert.equal(formularioProdutoSchema.safeParse({ ...camposProduto, estoque: "2147483647" }).success, true);
   assert.equal(formularioProdutoSchema.safeParse({ ...camposProduto, nome_produto: " ", id_categoria: "invalido" }).success, false);
+  assert.equal(formularioProdutoSchema.safeParse({ ...camposProduto, nome_produto: "A" }).success, false);
+  assert.equal(formularioProdutoSchema.safeParse({ ...camposProduto, descricao: "x".repeat(10_000) }).success, true);
+  assert.equal(formularioProdutoSchema.safeParse({ ...camposProduto, descricao: "x".repeat(10_001) }).success, false);
   const valido = formularioProdutoSchema.parse(camposProduto);
   assert.equal(produtoDadosSchema.safeParse({ ...valido, ativo: true }).success, false);
   assert.equal(produtoPatchSchema.safeParse({}).success, false);

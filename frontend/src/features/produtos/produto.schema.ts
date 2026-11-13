@@ -37,8 +37,8 @@ const precoSchema = z.string().regex(/^\d{1,10}(?:\.\d{1,2})?$/, "Informe um pre
   .refine(valor => /[1-9]/.test(valor), "O preço deve ser maior que zero.");
 export const produtoDadosSchema = z.strictObject({
   id_categoria: z.uuid("Selecione uma categoria."),
-  nome_produto: z.string().trim().min(1, "Informe o nome do produto.").max(140, "Use até 140 caracteres."),
-  descricao: z.string().trim().min(1, "Descreva o produto."),
+  nome_produto: z.string().trim().min(3, "O nome deve ter pelo menos 3 caracteres.").max(140, "Use até 140 caracteres."),
+  descricao: z.string().trim().min(1, "Descreva o produto.").max(10_000, "Use até 10.000 caracteres na descrição."),
   preco: precoSchema,
   estoque: z.number().int().min(0).max(2_147_483_647),
 });
