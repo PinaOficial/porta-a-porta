@@ -18,6 +18,15 @@ export function FormularioProduto({ produto, categorias, carregandoCategorias, e
   const [erro, setErro] = useState("");
   const [enviando, setEnviando] = useState(false);
   const trava = useRef(false);
+  function alterarCampo(campo: keyof typeof campos, valor: string) {
+    setCampos(anteriores => ({ ...anteriores, [campo]: valor }));
+    setErros(anteriores => {
+      if (!(campo in anteriores)) return anteriores;
+      const proximos = { ...anteriores };
+      delete proximos[campo];
+      return proximos;
+    });
+  }
   const normalizado = formularioProdutoSchema.safeParse(campos);
   const diff = inicial && normalizado.success ? diferencaProduto(inicial, normalizado.data) : null;
   const semMudanca = Boolean(diff && Object.keys(diff).length === 0);
@@ -44,13 +53,13 @@ export function FormularioProduto({ produto, categorias, carregandoCategorias, e
     } finally { trava.current = false; setEnviando(false); aoOcupar(false); }
   }
   return <section className="card editor-produto"><h2>{produto ? "Dados do anúncio" : "O que você vai oferecer?"}</h2><form onSubmit={enviar} noValidate aria-busy={enviando}><fieldset disabled={enviando || bloqueado}>
-    <div className="campo"><label htmlFor="categoria-formulario">Categoria</label><select id="categoria-formulario" required disabled={carregandoCategorias || erroCategorias || categorias.length === 0} value={campos.id_categoria} aria-invalid={Boolean(erros.id_categoria)} aria-describedby={erros.id_categoria ? "categoria-formulario-erro" : undefined} onChange={e => setCampos({ ...campos, id_categoria: e.target.value })}><option value="">Selecione uma categoria</option>{campos.id_categoria && categoriaIndisponivel && <option value={campos.id_categoria} disabled>{produto?.categoria.id_categoria === campos.id_categoria ? produto.categoria.nome : "Categoria selecionada"} · indisponível/inativa</option>}{categorias.map(item => <option key={item.id_categoria} value={item.id_categoria}>{item.nome}</option>)}</select>{erros.id_categoria && <span className="erro-campo" id="categoria-formulario-erro" role="alert">{erros.id_categoria}</span>}</div>
+    <div className="campo"><label htmlFor="categoria-formulario">Categoria</label><select id="categoria-formulario" required disabled={carregandoCategorias || erroCategorias || categorias.length === 0} value={campos.id_categoria} aria-invalid={Boolean(erros.id_categoria)} aria-describedby={erros.id_categoria ? "categoria-formulario-erro" : undefined} onChange={e => alterarCampo("id_categoria", e.target.value)}><option value="">Selecione uma categoria</option>{campos.id_categoria && categoriaIndisponivel && <option value={campos.id_categoria} disabled>{produto?.categoria.id_categoria === campos.id_categoria ? produto.categoria.nome : "Categoria selecionada"} · indisponível/inativa</option>}{categorias.map(item => <option key={item.id_categoria} value={item.id_categoria}>{item.nome}</option>)}</select>{erros.id_categoria && <span className="erro-campo" id="categoria-formulario-erro" role="alert">{erros.id_categoria}</span>}</div>
     {carregandoCategorias && <p role="status">Carregando categorias…</p>}{erroCategorias && <Aviso erro>Não foi possível carregar categorias. <button type="button" className="botao-texto" onClick={atualizarCategorias}>Tentar categorias novamente</button></Aviso>}
     {!carregandoCategorias && !erroCategorias && categorias.length === 0 && <Aviso>{produto ? "Sem categorias ativas no momento. Você pode editar os demais campos mantendo a categoria atual." : "Não há categorias ativas para publicar um produto. Aguarde uma categoria disponível."}</Aviso>}
     {produto && !produto.categoria.ativo && <Aviso>A categoria atual está inativa. Você pode manter a categoria e editar os outros campos. Para ativar o anúncio, escolha uma categoria ativa.</Aviso>}
-    <Campo id="nome_produto" label="Nome do produto" required maxLength={140} value={campos.nome_produto} erro={erros.nome_produto} onChange={e => setCampos({ ...campos, nome_produto: e.target.value })} />
-    <div className="campo"><label htmlFor="descricao">Descrição</label><textarea id="descricao" required rows={5} value={campos.descricao} aria-invalid={Boolean(erros.descricao)} aria-describedby={erros.descricao ? "descricao-erro" : undefined} onChange={e => setCampos({ ...campos, descricao: e.target.value })} />{erros.descricao && <span className="erro-campo" id="descricao-erro" role="alert">{erros.descricao}</span>}</div>
-    <div className="duas-colunas"><Campo id="preco" label="Preço (R$)" inputMode="decimal" required placeholder="25,90" value={campos.preco} erro={erros.preco} onChange={e => setCampos({ ...campos, preco: e.target.value })} /><Campo id="estoque" label="Estoque" type="number" inputMode="numeric" min={0} max={2147483647} step={1} required value={campos.estoque} erro={erros.estoque} onChange={e => setCampos({ ...campos, estoque: e.target.value })} /></div>
+    <Campo id="nome_produto" label="Nome do produto" required maxLength={140} value={campos.nome_produto} erro={erros.nome_produto} onChange={e => alterarCampo("nome_produto", e.target.value)} />
+    <div className="campo"><label htmlFor="descricao">Descrição</label><textarea id="descricao" required rows={5} maxLength={10000} value={campos.descricao} aria-invalid={Boolean(erros.descricao)} aria-describedby={erros.descricao ? "descricao-erro" : undefined} onChange={e => alterarCampo("descricao", e.target.value)} />{erros.descricao && <span className="erro-campo" id="descricao-erro" role="alert">{erros.descricao}</span>}</div>
+    <div className="duas-colunas"><Campo id="preco" label="Preço (R$)" inputMode="decimal" required placeholder="25,90" value={campos.preco} erro={erros.preco} onChange={e => alterarCampo("preco", e.target.value)} /><Campo id="estoque" label="Estoque" type="number" inputMode="numeric" min={0} max={2147483647} step={1} required value={campos.estoque} erro={erros.estoque} onChange={e => alterarCampo("estoque", e.target.value)} /></div>
     <p className="ajuda">Informe o preço sem separador de milhar, como 25,90. Estoque zero é permitido.</p>
     {erro && <Aviso erro>{erro}</Aviso>}{semMudanca && <p className="ajuda">Nenhuma alteração para salvar.</p>}
     <div className="acoes-produto"><button type="submit" className="botao-principal" disabled={semMudanca || criacaoIndisponivel}>{enviando ? "Salvando…" : produto ? "Salvar alterações" : "Publicar produto"}</button><Link className="botao-secundario" to={voltar}>Voltar à lista</Link></div>

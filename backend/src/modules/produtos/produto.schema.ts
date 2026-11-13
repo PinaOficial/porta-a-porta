@@ -57,8 +57,8 @@ export type ListarProdutosQuery = z.infer<typeof listarProdutosQuerySchema>;
 
 export const criarProdutoBodySchema = z.strictObject({
   id_categoria: z.uuid().transform((valor) => valor.toLowerCase()),
-  nome_produto: z.string().trim().min(1).max(140),
-  descricao: z.string().trim().min(1),
+  nome_produto: z.string().trim().min(3).max(140),
+  descricao: z.string().trim().min(1).max(10_000),
   preco: z.string().regex(/^\d{1,10}(?:\.\d{1,2})?$/, "Informe um preço decimal com até duas casas.")
     .refine((valor) => /[1-9]/.test(valor), "O preço deve ser maior que zero."),
   estoque: z.number().int().min(0).max(2_147_483_647),

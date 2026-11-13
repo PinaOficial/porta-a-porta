@@ -33,6 +33,15 @@ export function CondominiosAdminPage() {
   const [incerto, setIncerto] = useState(false);
   const [criado, setCriado] = useState<CondominioCriado | null>(null);
   const [enviando, setEnviando] = useState(false);
+  function alterarCampo(campo: keyof typeof dados, valor: string) {
+    setDados(anteriores => ({ ...anteriores, [campo]: valor }));
+    setCampos(anteriores => {
+      if (!(campo in anteriores)) return anteriores;
+      const proximos = { ...anteriores };
+      delete proximos[campo];
+      return proximos;
+    });
+  }
   const trava = useRef(false), montado = useRef(false);
   useEffect(() => { montado.current = true; return () => { montado.current = false; }; }, []);
   useEffect(() => { setBusca(filtro); }, [filtro]);
@@ -99,9 +108,9 @@ export function CondominiosAdminPage() {
     {!formulario && <button className="botao-principal" onClick={() => { setFormulario(true); setCriado(null); setCampos({}); setErro(""); setIncerto(false); }}>Cadastrar condomínio</button>}
     {formulario && <form className="card" onSubmit={e => void salvar(e)} noValidate><h2>Novo condomínio</h2>
       <fieldset disabled={enviando}><legend>Dados do condomínio</legend>
-        <Campo id="nome-residencial" label="Nome do condomínio/residencial *" required maxLength={160} value={dados.nome_residencial} onChange={e => setDados({ ...dados, nome_residencial: e.target.value })} erro={campos.nome_residencial?.[0]} />
-        <Campo id="cep-condominio" label="CEP *" required inputMode="numeric" autoComplete="postal-code" maxLength={9} placeholder="00000-000" value={dados.cep} onChange={e => setDados({ ...dados, cep: e.target.value })} erro={campos.cep?.[0]} />
-        <Campo id="endereco-condominio" label="Endereço completo *" required autoComplete="street-address" maxLength={255} value={dados.endereco} onChange={e => setDados({ ...dados, endereco: e.target.value })} erro={campos.endereco?.[0]} />
+        <Campo id="nome-residencial" label="Nome do condomínio/residencial *" required maxLength={160} value={dados.nome_residencial} onChange={e => alterarCampo("nome_residencial", e.target.value)} erro={campos.nome_residencial?.[0]} />
+        <Campo id="cep-condominio" label="CEP *" required inputMode="numeric" autoComplete="postal-code" maxLength={9} placeholder="00000-000" value={dados.cep} onChange={e => alterarCampo("cep", e.target.value)} erro={campos.cep?.[0]} />
+        <Campo id="endereco-condominio" label="Endereço completo *" required autoComplete="street-address" maxLength={255} value={dados.endereco} onChange={e => alterarCampo("endereco", e.target.value)} erro={campos.endereco?.[0]} />
         {erro && <Aviso erro>{erro}</Aviso>}
         {incerto && <div><a className="botao-texto" href="#catalogo-condominios" onClick={() => consultar(dados.nome_residencial)}>Conferir cadastro no catálogo</a><button type="button" className="botao-secundario" onClick={() => { setIncerto(false); setErro(""); }}>Conferi o catálogo; liberar novo envio</button></div>}
         <div className="acoes-admin"><button className="botao-principal" disabled={enviando || incerto}>{enviando ? "Cadastrando…" : "Salvar condomínio"}</button><button type="button" className="botao-secundario" onClick={() => setFormulario(false)}>Cancelar</button></div>

@@ -42,6 +42,8 @@ test("body aceita limites do banco, trim, estoque zero e descrição longa", () 
   const dados = criarProdutoBodySchema.parse({ ...body, nome_produto: ` ${"x".repeat(140)} `, descricao: ` ${descricao} `, estoque: 0 });
   assert.equal(dados.nome_produto.length, 140);
   assert.equal(dados.descricao, descricao);
+  assert.equal(criarProdutoBodySchema.safeParse({ ...body, descricao: "x".repeat(10_001) }).success, false);
+  assert.equal(criarProdutoBodySchema.safeParse({ ...body, nome_produto: "A" }).success, false);
   assert.equal(dados.estoque, 0);
   assert.equal(criarProdutoBodySchema.parse({ ...body, estoque: 2_147_483_647 }).estoque, 2_147_483_647);
 });
